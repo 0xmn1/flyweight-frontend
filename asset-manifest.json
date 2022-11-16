@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/flyweight-web3-frontend/static/css/main.073c9b0a.css",
+    "main.js": "/flyweight-web3-frontend/static/js/main.f42da9ea.js",
+    "static/js/787.0bfccc2a.chunk.js": "/flyweight-web3-frontend/static/js/787.0bfccc2a.chunk.js",
+    "index.html": "/flyweight-web3-frontend/index.html",
+    "main.073c9b0a.css.map": "/flyweight-web3-frontend/static/css/main.073c9b0a.css.map",
+    "main.f42da9ea.js.map": "/flyweight-web3-frontend/static/js/main.f42da9ea.js.map",
+    "787.0bfccc2a.chunk.js.map": "/flyweight-web3-frontend/static/js/787.0bfccc2a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.073c9b0a.css",
+    "static/js/main.f42da9ea.js"
+  ]
+}
