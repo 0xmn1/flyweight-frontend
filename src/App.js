@@ -1,6 +1,19 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import React from 'react';
 import Big from 'big.js';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import Alert from 'react-bootstrap/Alert';
+import Stack from 'react-bootstrap/Stack';
+import Button from 'react-bootstrap/Button';
+import Form from 'react-bootstrap/Form';
+import Dropdown from 'react-bootstrap/Dropdown';
+import DropdownButton from 'react-bootstrap/DropdownButton';
+import Card from 'react-bootstrap/Card';
+import Navbar from 'react-bootstrap/Navbar';
+import Nav from 'react-bootstrap/Nav';
 import { ethers } from 'ethers';
 
 const ordersContractAddress = '0x4CE49b22BDB1f1f41a19160FF907530e62dD3912';
@@ -39,7 +52,11 @@ class App extends React.Component {
       tokenInSymbol: 'UNI',
       tokenOutSymbol: 'WETH',
       triggerDirection: 2,
-      triggerPrice: '0.02'
+      triggerPrice: '0.02',
+      userMessages: {
+        info: 'Blockchain transaction is now submitting (ethereum block approval time takes ~15 secs).',
+        warning: 'No effect has taken place (the blockchain transaction was reverted).'
+      }
     };
   }
 
@@ -87,47 +104,99 @@ class App extends React.Component {
     }
   };
 
+  getOrderDirectionLabel = orderDirectionEnum => {
+    const orderDirectionInt = parseInt(orderDirectionEnum);
+    switch (orderDirectionInt) {
+      case 0:
+        return 'below';
+      case 1:
+        return 'equal to';
+      case 2:
+        return 'above';
+    }
+  };
+
   render() {
     return (
       <>
-        <h1>New order</h1>
-        <div>
-          Swap
-          <input type="number"
-            placeholder="token in amount"
-            value={this.state.tokenInDecimalAmount}
-            onChange={e => this.setState(_ => ({ tokenInAmount: e.target.value }))}
-            />
-          <select value={this.state.tokenInSymbol}
-            onChange={e => this.setState(_ => ({ tokenInSymbol: e.target.value }))}
-            >
-            <option value="UNI">UNI</option>
-          </select>
-          for
-          <select value={this.state.tokenOutSymbol}
-            onChange={e => this.setState(_ => ({ tokenOutSymbol: e.target.value }))}
-            >
-            <option value="WETH">WETH</option>
-          </select>
-          when price is
-        </div>
-        <div>
-          <select value={this.state.triggerDirection}
-            onChange={e => this.setState(_ => ({ triggerDirection: e.target.value }))}
-            >
-            <option value="2">above</option>
-            <option value="1">equal to</option>
-            <option value="0">below</option>
-          </select>
-        </div>
-        <div>
-          <input type="text"
-            placeholder="trigger price for token in"
-            value={this.state.triggerPrice}
-            onChange={e => this.setState(_ => ({ triggerPrice: e.target.value }))}
-            />
-          <button type="button" onClick={this.addOrder}>Add order to smart contract</button>
-        </div>
+        <Navbar bg="light" expand="lg" className="mb-3">
+          <Container>
+            <Navbar.Brand>
+              <Stack direction="vertical" gap={0}>
+                <div>Flyweight</div>
+              </Stack>
+            </Navbar.Brand>
+            <Navbar.Toggle aria-controls="basic-navbar-nav" />
+            <Navbar.Collapse>
+              <Nav className="me-auto">
+                <Nav.Link>Home</Nav.Link>
+                <Nav.Link>Dashboard</Nav.Link>
+                <Nav.Link>FAQ</Nav.Link>
+                <Nav.Link>Github</Nav.Link>
+              </Nav>
+            </Navbar.Collapse>
+          </Container>
+        </Navbar>
+        <Container>
+          <Row>
+            <Col>
+              <Alert key="info" variant="info" show={this.state.userMessages.info}>
+                <div>{this.state.userMessages.info}</div>
+                <Alert.Link href="#" target="_blank">Frequently asked questions</Alert.Link>
+              </Alert>
+              <Alert key="warning" variant="warning" show={this.state.userMessages.warning}>
+                <div>We're sorry, something went wrong.</div>
+                <div>{this.state.userMessages.warning}</div>
+                <Alert.Link href="#" target="_blank">Frequently asked questions</Alert.Link>
+              </Alert>
+            </Col>
+          </Row>
+          <Row>
+            <Col xs={12} lg={7}>
+              <Card className="mb-3 mb-lg-0">
+                <Card.Body>
+                  <Card.Title>Order history</Card.Title>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col xs={12} lg={5}>
+              <Card>
+                <Card.Body>
+                  <Card.Title>New order</Card.Title>
+                  <Form>
+                    <Form.Group className="mb-3" controlId="formBasicEmail">
+                      <Form.Text>I want to swap...</Form.Text>
+                      <Stack direction="horizontal" gap={1}>                  
+                        <Form.Control type="number" placeholder="token in amount" defaultValue={this.state.tokenInDecimalAmount} onChange={e => this.setState({ tokenInAmount: e.target.value })} />
+                        <DropdownButton title={this.state.tokenInSymbol} onSelect={(tokenInSymbol, _) => this.setState({ tokenInSymbol })} variant="dark">
+                          <Dropdown.Item eventKey="UNI" active={this.state.tokenInSymbol === 'UNI'}>UNI (Uniswap)</Dropdown.Item>
+                        </DropdownButton>
+                        <Form.Text>to</Form.Text>
+                        <DropdownButton title={this.state.tokenOutSymbol} onSelect={(tokenOutSymbol, _) => this.setState({ tokenOutSymbol })} variant="dark">
+                          <Dropdown.Item eventKey="WETH" active={this.state.tokenOutSymbol === 'WETH'}>WETH (Wrapped ether)</Dropdown.Item>
+                        </DropdownButton>
+                      </Stack>
+                      <Form.Text>when the price of <span className="fw-bold">{this.state.tokenInSymbol}</span> is</Form.Text>
+                      <Stack direction="horizontal" gap={1}>
+                        <DropdownButton title={this.getOrderDirectionLabel(this.state.triggerDirection)} onSelect={(triggerDirection, _) => this.setState({ triggerDirection })} variant="dark">
+                          <Dropdown.Item eventKey={2} active={this.state.triggerDirection === 2}>{this.getOrderDirectionLabel(2)}</Dropdown.Item>
+                          <Dropdown.Item eventKey={1} active={this.state.triggerDirection === 1}>{this.getOrderDirectionLabel(1)}</Dropdown.Item>
+                          <Dropdown.Item eventKey={0} active={this.state.triggerDirection === 0}>{this.getOrderDirectionLabel(0)}</Dropdown.Item>
+                        </DropdownButton>
+                        <Form.Control type="number" placeholder="trigger price for token in" defaultValue={this.state.triggerPrice} onChange={e => this.setState({ triggerPrice: e.target.value })} />
+                      </Stack>
+                    </Form.Group>
+                  </Form>
+                </Card.Body>
+                <Card.Footer>
+                  <Button variant="primary" type="button" onClick={this.addOrder}>
+                    Add order
+                  </Button>
+                </Card.Footer>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
       </>
     );
   }
