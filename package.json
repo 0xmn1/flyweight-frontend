@@ -21,7 +21,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "BUILD_PATH='./docs' react-scripts build",
+    "build": "BUILD_PATH='./docs' react-scripts build && git checkout HEAD docs/CNAME",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d docs",
     "test": "react-scripts test",
