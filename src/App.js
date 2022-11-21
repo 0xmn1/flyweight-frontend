@@ -1,3 +1,5 @@
+'use strict';
+
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import React from 'react';
@@ -14,51 +16,120 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import Card from 'react-bootstrap/Card';
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
+import Fade from 'react-bootstrap/Fade';
+import Table from 'react-bootstrap/Table';
+import Badge from 'react-bootstrap/Badge';
 import coinSymbols from './coin-symbols.json';
 import ordersContractAbi from './orders-smart-contract-abi.json';
+import erc20ContractAbi from './erc20-contract-abi.json';
 import { ethers } from 'ethers';
-import { HourglassSplit } from 'react-bootstrap-icons';
+import { ArrowClockwise } from 'react-bootstrap-icons';
+import detectEthereumProvider from '@metamask/detect-provider';
 
-const ordersContractAddress = '0x0180efB63Ae8C1607443B4Af87fF8ed49848Bb25';
-const erc20Abi = [{"constant":true,"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"internalType":"address","name":"dst","type":"address"},{"internalType":"uint256","name":"rawAmount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}];
-
-let signer = null;
-let ordersContract = null;
-
-const initContracts = () => {
-  const signer = provider.getSigner();
-  ordersContract = new ethers.Contract(ordersContractAddress, ordersContractAbi, signer);
-};
-
-const provider = new ethers.providers.Web3Provider(window.ethereum);
+const ordersContractAddress = '0xE58E94E87547A4FfE03f11Ee086adc31cEED3F03';
+const blockExplorerTransactionUrl = 'https://goerli.etherscan.io/tx';
 
 class App extends React.Component {
   constructor() {
     super();
     this.state = {
+      orders: null,
       tokenInDecimalAmount: 0.001,
       tokenInSymbol: 'UNI',
       tokenOutSymbol: 'WETH',
       triggerDirection: 2,
       triggerPrice: '0.02',
       whitelistedCoinSymbols: [],
+      metamaskEventsBound: false,
+      isMetamaskProviderDetected: true,
+      networkId: null,
+      account: null,
       alertMsgPrimary: null,
       alertMsgSecondary: null,
-      alertVariant: null
+      alertVariant: null,
+      alertCode: null
     };
+
+    this.orderDirectionMap = {
+      0: '<',
+      1: '=',
+      2: '>'
+    };
+
+    this.orderStatusMap = {
+      0: 'Untriggered',
+      1: 'Executed',
+      2: 'Cancelled'
+    };
+
+    this.alertCodeMap = {
+      1: {
+        label: 'Frequently asked questions',
+        href: ''
+      },
+      2: {
+        label: 'What is an ethereum transaction?',
+        href: ''
+      },
+      3: {
+        label: 'How are orders added in the smart contract?',
+        href: ''
+      },
+      4: {
+        label: 'Why does creating an order involve 2 ethereum transactions instead of 1?',
+        href: ''
+      },
+      5: {
+        label: 'How does the smart contract implement self-custody of coins?',
+        href: ''
+      },
+      6: {
+        label: 'My order is live, what now?',
+        href: ''
+      }
+    };
+
+    this.decimalsMap = {};
   }
 
   async componentDidMount() {
-    provider.send('eth_requestAccounts', [])
-      .then(async () => {
-        initContracts();
-        await this.setWhitelistedCoinSymbols();
-      })
-      .catch(console.error);
+    await this.setWhitelistedCoinSymbols();
+    await this.setUserOrderDashboard();
+
+    const networkId = await ethereum.request({ method: 'eth_chainId' });
+    const isMetamaskProviderDetected = await detectEthereumProvider();
+    this.setState({ networkId, isMetamaskProviderDetected });
+    this.ensureMetamaskEventsBound();
   }
 
+  ensureMetamaskEventsBound = () => {
+    if (!this.state.metamaskEventsBound) {
+      window.ethereum.on('accountsChanged', accounts => {
+        this.setUserOrderDashboard(accounts[0]);
+      });
+      
+      window.ethereum.on('chainChanged', networkId => {
+        this.setUserOrderDashboard();
+        this.setState({ networkId });
+      });
+
+      this.setState({ metamaskEventsBound: true });
+    }
+  };
+
+  createAlchemyProvider = () => {
+    const providerAlchemyPublicApiKey = 'dZfJX0zlMxU1bwn_91-6KYdVb4m5V2hs';
+    const providerAlchemyNetwork = 'goerli';
+    return new ethers.providers.AlchemyProvider(providerAlchemyNetwork, providerAlchemyPublicApiKey);
+  };
+
+  createOrdersContract = providerOrSigner => {
+    return new ethers.Contract(ordersContractAddress, ordersContractAbi, providerOrSigner);
+  };
+
   setWhitelistedCoinSymbols = async () => {
-    const res = await ordersContract.functions.getWhitelistedSymbols(coinSymbols);
+    const contract = this.createOrdersContract(this.createAlchemyProvider());
+    const res = await contract.functions.getWhitelistedSymbols(coinSymbols);
     this.setState({ whitelistedCoinSymbols: res[0] });
   };
 
@@ -74,27 +145,161 @@ class App extends React.Component {
     }
   };
 
-  tryAddOrder = async () => {
-    if (this.state.tokenInDecimalAmount <= 0) {
-      this.showAlert('warning', 'Please select a postive number of tokens to swap.', `Your order is currently configured to swap "${this.state.tokenInDecimalAmount}" tokens`);
-    } else if (this.state.tokenInSymbol === this.state.tokenOutSymbol) {
-      this.showAlert('warning', 'Please select 2 different pairs of tokens to swap.', `Your order is currently configured to swap "${this.state.tokenInSymbol}" to "${this.state.tokenOutSymbol}"`);
-    } else if (this.state.triggerPrice < 0) {
-      this.showAlert('warning', 'Please select a non-negative trigger price.', `Your order is currently configured to trigger at "${this.state.triggerPrice} $USD"`);
-    } else {
-      this.showAlert(null, null, null);
-      await this.addOrder();
+  setUserOrderDashboard = async (account) => {
+    this.setState({ orders: null });
+
+    const providerMetamask = new ethers.providers.Web3Provider(window.ethereum);
+    if (!account) {
+      const accounts = await providerMetamask.send('eth_requestAccounts', []);
+      account = accounts[0];
+    }
+
+    this.setState({ account });
+    const contract = this.createOrdersContract(this.createAlchemyProvider());
+    const txResponse = await contract.functions.getOrdersByAddress(account);
+    const ordersResponse = txResponse[0];
+
+    const decimalsMap = {};
+    const symbols = ordersResponse.reduce((set, order) => set.add(order.tokenIn), new Set());
+    for (let symbol of symbols) {
+      const isCached = decimalsMap.hasOwnProperty(symbol);
+      if (!isCached) {
+        const tokenAddresses = await contract.functions.tryGetTokenAddress(symbol);
+        const tokenAddress = tokenAddresses[0];
+        const tokenContract = new ethers.Contract(tokenAddress, erc20ContractAbi, this.createAlchemyProvider());
+        const tokenDecimals = await tokenContract.functions.decimals();
+        decimalsMap[symbol] = tokenDecimals;
+      }
+    }
+
+    const orders = ordersResponse.map(o => {
+      const orderId = parseInt(o.id._hex, 16);
+      const ownerTail = o.owner.substring(o.owner.length - 4, o.owner.length);
+      const tokenInAmountInt = parseInt(o.tokenInAmount._hex, 16);
+      const tokenInDecimals = decimalsMap[o.tokenIn];
+      const tokenInAmountIntBig = new Big(`${tokenInAmountInt}e-${tokenInDecimals}`);
+      const anonOrderId = `${ownerTail}${orderId}`;
+
+      return {
+        orderId: orderId,
+        anonOrderId: anonOrderId,
+        tokenInAmount: tokenInAmountIntBig.toString(),
+        tokenIn: o.tokenIn,
+        tokenOut: o.tokenOut,
+        direction: this.orderDirectionMap[o.direction],
+        tokenInTriggerPrice: o.tokenInTriggerPrice,
+        orderState: this.orderStatusMap[o.orderState],
+        lastChecked: null
+      };
+    });
+
+    this.setState({ orders });
+  };
+
+  handleOrderAction = async (orderId, actionType) => {
+    switch (actionType) {
+      case 'cancel':
+        await this.cancelOrder(orderId);
+        break;
+      default:
+        console.warn(`Unhandled action type: ${actionType}`);
+        break;
+    }
+
+    await this.setUserOrderDashboard();
+  };
+
+  convertTokenAmountToBalance = async (symbol, balance) => {
+    const decimals = await this.getCachedTokenDecimals(symbol);
+    const balanceBig = new Big(`${balance}e-${decimals}`);
+    return balanceBig.toString();
+  };
+
+  getCachedTokenDecimals = async symbol => {
+    if (this.decimalsMap[symbol]) {
+      return this.decimalsMap[symbol];
+    }
+
+    const contract = this.createOrdersContract(this.createAlchemyProvider());
+    const tokenAddresses = await contract.functions.tryGetTokenAddress(symbol);
+    const tokenAddress = tokenAddresses[0];
+    const tokenContract = new ethers.Contract(tokenAddress, erc20ContractAbi, this.createAlchemyProvider());
+    const decimals = tokenContract.functions.decimals();
+    this.decimalsMap[symbol] = decimals;
+    return decimals;
+  };
+
+  cancelOrder = async (orderId) => {
+    const providerMetamask = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = providerMetamask.getSigner();
+    const contract = this.createOrdersContract(signer);
+
+    this.showAlert('primary', 1, 'Please confirm the transaction in metamask.', 'This will be 1 transaction that returns 100% of your order\'s coins back to your wallet.');
+    let tx;
+    try {
+      tx = await contract.functions.cancelOrder(orderId);
+    } catch (err) {
+      console.log(err);
+      const msg = this.mapMetamaskErrorToMessage(err.code);
+      this.showAlert('secondary', 1, msg, null);
+      return;
+    }
+
+    this.showAlert('info', 1, `Cancelling your order now, beep boop...`, 'This transaction is refunding 100% of your order\'s coins back to your wallet.');
+    try {
+      const txReceipt = await tx.wait();
+      if (txReceipt.status === 0) {
+        throw txReceipt;
+      }
+
+      const event = txReceipt.events.find(e => e.event === 'OrderCancelled');
+      const tokenInAmount = parseInt(event.args.tokenInAmount._hex, 16);
+      const refundBalance = await this.convertTokenAmountToBalance(event.args.tokenIn, tokenInAmount);
+      const refundDetails = `Refunded ${refundBalance} ${event.args.tokenIn} to "${event.args.owner}"`;
+      const txUrl = `${blockExplorerTransactionUrl}/${txReceipt.transactionHash}`;
+      this.showAlert('success', 1, refundDetails, txUrl);
+    } catch (err) {
+      console.log(err);
+      const msg = this.mapMetamaskErrorToMessage(err.reason);
+      this.showAlert('warning', 1, msg, null);
     }
   };
 
-  addOrder = async () => {
-    const signer = provider.getSigner();
-    const tokenInAddresses = await ordersContract.functions.tryGetTokenAddress(this.state.tokenInSymbol);
-    const tokenOutAddresses = await ordersContract.functions.tryGetTokenAddress(this.state.tokenOutSymbol);
+  mapMetamaskErrorToMessage = errorReason => {
+    switch (errorReason) {
+      case 'user rejected transaction':
+      case 'ACTION_REJECTED':
+        return 'Transaction was cancelled';
+      default:
+        console.warn(`Unsuccessfully mapped metamask error to message: ${errorReason}`);
+        return `We're sorry, something went wrong`;
+    }
+  };
+
+  tryAddOrder = async () => {
+    if (this.state.tokenInDecimalAmount <= 0) {
+      this.showAlert('warning', 1, 'Please select a postive number of tokens to swap.', `Your order is currently configured to swap "${this.state.tokenInDecimalAmount}" tokens`);
+    } else if (this.state.tokenInSymbol === this.state.tokenOutSymbol) {
+      this.showAlert('warning', 1, 'Please select 2 different pairs of tokens to swap.', `Your order is currently configured to swap "${this.state.tokenInSymbol}" to "${this.state.tokenOutSymbol}"`);
+    } else if (this.state.triggerPrice < 0) {
+      this.showAlert('warning', 1, 'Please select a non-negative trigger price.', `Your order is currently configured to trigger at "${this.state.triggerPrice} $USD"`);
+    } else {
+      this.showAlert(null, null, null, null);
+      const providerMetamask = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = providerMetamask.getSigner();
+      await this.addOrder(signer);
+      await this.setUserOrderDashboard();
+    }
+  };
+
+  addOrder = async signer => {
+    const contract = this.createOrdersContract(signer);
+    const tokenInAddresses = await contract.functions.tryGetTokenAddress(this.state.tokenInSymbol);
+    const tokenOutAddresses = await contract.functions.tryGetTokenAddress(this.state.tokenOutSymbol);
     const tokenInAddress = tokenInAddresses[0];
     const tokenOutAddress = tokenOutAddresses[0];
-    const tokenInContract = new ethers.Contract(tokenInAddress, erc20Abi, signer);
-    const tokenOutContract = new ethers.Contract(tokenOutAddress, erc20Abi, signer);
+    const tokenInContract = new ethers.Contract(tokenInAddress, erc20ContractAbi, signer);
+    const tokenOutContract = new ethers.Contract(tokenOutAddress, erc20ContractAbi, signer);
 
     const tokenInDecimals = await tokenInContract.functions.decimals();
     const tokenOutDecimals = await tokenOutContract.functions.decimals();
@@ -102,8 +307,8 @@ class App extends React.Component {
     const tokenInAmountStr = tokenInAmount.toString();
 
     try {
-      this.showAlert('primary', 'Please confirm transaction [1] of [2] in metamask.', 'This will add your order to the ethereum smart contract. This transaction transfers data only and does not transfer any coins.');
-      const txNewOrder = await ordersContract.functions.addNewOrder(
+      this.showAlert('primary', 2, 'Please confirm transaction [1] of [2] in metamask.', 'This will add your order to the ethereum smart contract. This transaction creates data and does not transfer any coins yet.');
+      const txNewOrder = await contract.functions.addNewOrder(
         this.state.tokenInSymbol,
         this.state.tokenOutSymbol,
         this.state.triggerPrice,
@@ -111,39 +316,44 @@ class App extends React.Component {
         tokenInAmountStr
       );
 
-      this.showAlert('info', 'Processing transaction, beep boop...', 'Awaiting network approval (ethereum blocks take ~15 secs, unless there is degen monkey nft minting going on, or something worse than monkeys..)');
+      this.showAlert('info', 3, 'Processing transaction, beep boop...', 'Awaiting network approval (ethereum blocks take ~15 secs, unless there is degen monkey nft minting going on, or something worse than monkeys..)');
       const txNewOrderReceipt = await txNewOrder.wait();
       if (txNewOrderReceipt.status === 0) {
         throw txNewOrderReceipt;
       }
 
-      this.showAlert('success', 'Please confirm transaction [2] of [2] in metamask.', 'This allows you to deposit the coins for your order to automatically swap via uniswap. Users can cancel untriggered orders at any time to get their coins sent back');
-      const metamaskSigner = provider.getSigner();
+      this.showAlert('primary', 4, 'Please confirm transaction [2] of [2] in metamask.', 'This allows you to deposit the coins for your order to automatically swap via uniswap. Users can cancel untriggered orders at any time to get their coins sent back');
       const txDeposit = await tokenInContract.transfer(ordersContractAddress, tokenInAmountStr);
 
-      this.showAlert('info', 'Finalizing your order now, boop beep...', 'Awaiting network approval. Remember the bull market days when gas was 2000+ gwei? Wen zk sync token');
+      this.showAlert('info', 5, 'Finalizing your order now, boop beep...', 'Awaiting network approval. Remember the bull market days when gas was 2000+ gwei? Wen zk sync token');
       const txDepositReceipt = await txDeposit.wait();
       if (txDepositReceipt.status === 0) {
         throw txDepositReceipt;
       }
 
-      this.showAlert('success', 'Neat! Your order is now live, and will be triggered when your conditions are met.', 'This is a decentralized protocol: users can refund coin deposits at any time, yay. Goodluck in the casino comrade (you may now close this box/browser tab)');
+      this.showAlert('success', 6, 'Neat! Your order is now live, and will be triggered when your conditions are met.', 'This is a decentralized protocol: users can refund coin deposits at any time, yay. Goodluck in the casino comrade (you may now close this box/browser tab)');
     } catch (err) {
-      console.error(err);
-      this.showAlert('warning', `Order cancelled (${err.reason})`);
+      console.log(err);
+      const msg = this.mapMetamaskErrorToMessage(err.reason);
+      this.showAlert('secondary', 1, msg, null);
     }
   };
 
-  showAlert = (alertVariant, alertMsgPrimary, alertMsgSecondary) => this.setState({ alertVariant, alertMsgPrimary, alertMsgSecondary });
+  showAlert = (alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary) => this.setState({ alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary });
 
   render() {
     return (
       <>
-        <Navbar bg="light" expand="lg" className="mb-3">
+        {this.state.networkId && this.state.networkId !== '0x1' && (
+            <div className="banner-warning text-center text-dark bg-warning">
+              Welcome to Flyweight | Your metamask is currently connected to a testnet ({this.state.networkId}) | You can change your network in Metamask.
+            </div>
+        )}
+        <Navbar bg="light" expand="lg" className="mb-3" id="navbar">
           <Container>
             <Navbar.Brand>
               <Stack direction="vertical" gap={0}>
-                <div>Flyweight</div>
+                <div><b>Fly</b>weight</div>
               </Stack>
             </Navbar.Brand>
             <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -160,7 +370,7 @@ class App extends React.Component {
         <Container>
           <Row>
             <Col>
-              <Alert variant={this.state.alertVariant} show={this.state.alertMsgPrimary} onClose={() => this.showAlert(null, null, null)} className='wrapper-alert' dismissible>
+              <Alert variant={this.state.alertVariant} show={this.state.alertMsgPrimary} onClose={() => this.showAlert(null, null, null, null)} className='wrapper-alert' transition={Fade} dismissible>
                 <h5 className="d-flex align-items-center mb-0">
                 <div className={this.state.alertVariant === 'info' ? 'anim-pulsing-circle anim-pulse' : null}></div>
                   <div>{this.state.alertMsgPrimary}</div>
@@ -168,21 +378,83 @@ class App extends React.Component {
                 <div>
                   <small>{this.state.alertMsgSecondary}</small>
                 </div>
-                <Alert.Link href="#" target="_blank">
-                  <small class="text-muted">Frequently asked questions</small>
+                <Alert.Link href={this.alertCodeMap[this.state.alertCode]?.href} target="_blank">
+                  <small className="text-muted">
+                    {this.alertCodeMap[this.state.alertCode]?.label}
+                  </small>
                 </Alert.Link>
               </Alert>
             </Col>
           </Row>
           <Row>
-            <Col xs={12} lg={7}>
+            <Col xs={12} lg={8}>
               <Card className="mb-3 mb-lg-0">
                 <Card.Body>
-                  <Card.Title>Order history</Card.Title>
+                  <Card.Title>
+                    Orders
+                  </Card.Title>
+                  {!this.state.orders ? (
+                    <div className="d-flex align-items-center justify-content-center wrapper-loading">
+                      <ArrowClockwise color="lightgray" size={64} className="anim-spin" />
+                      <div>fetching blockchain data..</div>
+                    </div>
+                  ) : this.state.orders.length ? (
+                    <>
+                      <Card.Text className="text-muted">
+                        Your orders for <Badge bg="secondary">{this.state.account}</Badge> are listed here. You can cancel orders using the "Action" button on the right, & change addresses by selecting a different address in Metamask.
+                      </Card.Text>
+                      <Table responsive striped bordered hover>
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Swap amount</th>
+                            <th>Swap from</th>
+                            <th>Swap to</th>
+                            <th>Trigger (USD)</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {this.state.orders.map(o => (
+                            <tr key={o.orderId}>
+                              <td>{o.anonOrderId}</td>
+                              <td>{o.tokenInAmount}</td>
+                              <td>{o.tokenIn}</td>
+                              <td>{o.tokenOut}</td>
+                              <td>
+                                {o.direction}&nbsp;${o.tokenInTriggerPrice}
+                              </td>
+                              <td>
+                                {o.orderState === 'Untriggered' ? (
+                                  <Badge bg="warning" text="dark">{o.orderState}</Badge>
+                                ) : (o.orderState === 'Executed' ? (
+                                  <Badge bg="success">{o.orderState}</Badge>
+                                ) : (o.orderState === 'Cancelled') ? (
+                                  <Badge bg="secondary">{o.orderState}</Badge>
+                                ) : (
+                                  <Badge>{o.orderState}</Badge>
+                                ))}
+                              </td>
+                              <td>
+                                <DropdownButton title="" onSelect={(actionType, _) => this.handleOrderAction(o.orderId, actionType)} variant="dark">
+                                  <Dropdown.Item eventKey="cancel" disabled={o.orderState === 'Executed' || o.orderState === 'Cancelled'}>Cancel and refund order</Dropdown.Item>
+                                </DropdownButton>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </>
+                  ) : (
+                    <Card.Text>
+                      No orders found for <Badge bg="secondary">{this.state.account}</Badge>. You can create an order using the "New order" panel, or switch to another account in Metamask.
+                    </Card.Text>
+                  )}
                 </Card.Body>
               </Card>
             </Col>
-            <Col xs={12} lg={5}>
+            <Col xs={12} lg={4}>
               <Card>
                 <Card.Body>
                   <Card.Title>New order</Card.Title>
@@ -217,9 +489,16 @@ class App extends React.Component {
                   </Form>
                 </Card.Body>
                 <Card.Footer>
-                  <Button variant="primary" type="button" onClick={this.tryAddOrder}>
-                    Add order
-                  </Button>
+                  <div className="d-flex align-items-center justify-content-between">
+                    <Button variant="primary" type="button" onClick={this.tryAddOrder}>
+                      Create order
+                    </Button>
+                    <Card.Text>
+                      <small className="text-muted text-right">
+                        (opens <a href="https://metamask.io/" target="_blank" title="Opens metamask home page in a new browser tab">Metamask</a>)
+                      </small>
+                    </Card.Text>
+                  </div>
                 </Card.Footer>
               </Card>
             </Col>
