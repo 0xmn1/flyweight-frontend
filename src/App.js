@@ -19,6 +19,7 @@ import Nav from 'react-bootstrap/Nav';
 import Fade from 'react-bootstrap/Fade';
 import Table from 'react-bootstrap/Table';
 import Badge from 'react-bootstrap/Badge';
+import Modal from 'react-bootstrap/Modal';
 import coinSymbols from './coin-symbols.json';
 import ordersContractAbi from './orders-smart-contract-abi.json';
 import erc20ContractAbi from './erc20-contract-abi.json';
@@ -44,6 +45,9 @@ class App extends React.Component {
       isMetamaskProviderDetected: true,
       networkId: null,
       account: null,
+      showManualLoginModal: false,
+      manualLoginAddress: '0xAF3e8346F1B57B0915851dBA3a1CDE65CF8dF522',
+      manualLoginNetworkName: 'goerli',
       alertMsgPrimary: null,
       alertMsgSecondary: null,
       alertVariant: null,
@@ -86,6 +90,10 @@ class App extends React.Component {
       6: {
         label: 'My order is live, what now?',
         href: ''
+      },
+      7: {
+        label: 'How does Flyweight read the Ethereum blockchain?',
+        href: ''
       }
     };
 
@@ -94,18 +102,23 @@ class App extends React.Component {
 
   async componentDidMount() {
     await this.setWhitelistedCoinSymbols();
-    await this.setUserOrderDashboard();
 
-    const networkId = await ethereum.request({ method: 'eth_chainId' });
     const isMetamaskProviderDetected = await detectEthereumProvider();
-    this.setState({ networkId, isMetamaskProviderDetected });
+    this.setState({ isMetamaskProviderDetected });
     this.ensureMetamaskEventsBound();
   }
 
   ensureMetamaskEventsBound = () => {
     if (!this.state.metamaskEventsBound) {
       window.ethereum.on('accountsChanged', accounts => {
-        this.setUserOrderDashboard(accounts[0]);
+        if (accounts.length) {
+          this.setUserOrderDashboard(accounts[0]);
+        } else {
+          this.setState({
+            networkId: null,
+            account: null
+          });
+        }
       });
       
       window.ethereum.on('chainChanged', networkId => {
@@ -115,6 +128,50 @@ class App extends React.Component {
 
       this.setState({ metamaskEventsBound: true });
     }
+  };
+
+  toggleManualLoginModal = () => {
+    this.setState(prevState => ({
+      showManualLoginModal: !prevState.showManualLoginModal
+    }));
+  };
+
+  manualLogin = () => {
+    const networkId = this.state.manualLoginNetworkName === 'mainnet' ? 1 : 5;
+    const account = this.state.manualLoginAddress;
+    this.setState({
+      networkId,
+      account,
+      showManualLoginModal: false
+    });
+
+    this.setUserOrderDashboard(account);
+  };
+
+  metamaskLogin = async () => {
+    const networkId = await window.ethereum.request({ method: 'eth_chainId' });
+    const providerMetamask = new ethers.providers.Web3Provider(window.ethereum);
+
+    let accounts;
+    try {
+      accounts = await providerMetamask.send('eth_requestAccounts', []);
+    } catch (err) {
+      console.log(err);
+      this.showAlert('secondary', 7, this.mapMetamaskErrorToMessage(err.code), 'If you prefer, you can also connect by "pasting" a wallet address into a textbox.');
+      return;
+    }
+
+    const account = accounts[0];
+    this.setState({ networkId, account });
+    this.showAlert(null, null, null, null);
+    this.setUserOrderDashboard(account);
+  };
+
+  disconnect = () => {
+    this.setState({
+      networkId: null,
+      account: null
+    });
   };
 
   createAlchemyProvider = () => {
@@ -148,10 +205,9 @@ class App extends React.Component {
   setUserOrderDashboard = async (account) => {
     this.setState({ orders: null });
 
-    const providerMetamask = new ethers.providers.Web3Provider(window.ethereum);
     if (!account) {
-      const accounts = await providerMetamask.send('eth_requestAccounts', []);
-      account = accounts[0];
+      console.warn('Tried to set user order before setting account address');
+      return;
     }
 
     this.setState({ account });
@@ -265,13 +321,15 @@ class App extends React.Component {
     }
   };
 
-  mapMetamaskErrorToMessage = errorReason => {
-    switch (errorReason) {
+  mapMetamaskErrorToMessage = errorReasonOrCode => {
+    switch (errorReasonOrCode) {
       case 'user rejected transaction':
       case 'ACTION_REJECTED':
         return 'Transaction was cancelled';
+      case -32002:
+        return 'Please unlock Metamask to continue.';
       default:
-        console.warn(`Unsuccessfully mapped metamask error to message: ${errorReason}`);
+        console.warn(`Unsuccessfully mapped metamask error to message: ${errorReasonOrCode}`);
         return `We're sorry, something went wrong`;
     }
   };
@@ -287,8 +345,22 @@ class App extends React.Component {
       this.showAlert(null, null, null, null);
       const providerMetamask = new ethers.providers.Web3Provider(window.ethereum);
       const signer = providerMetamask.getSigner();
+      let accounts = await providerMetamask.send('eth_accounts', []);
+      const isMetamaskConnected = accounts.length;
+      if (!isMetamaskConnected) {
+        this.showAlert('primary', 1, 'Please connect to Metamask to add new orders on Ethereum.');
+
+        try {
+          accounts = await providerMetamask.send('eth_requestAccounts', []);
+        } catch (err) {
+          // chkpt
+          console.log(err);
+          this.showAlert('primary', 3, this.mapMetamaskErrorToMessage(err.code));
+        }
+      }
+
       await this.addOrder(signer);
-      await this.setUserOrderDashboard();
+      await this.setUserOrderDashboard(accounts[0]);
     }
   };
 
@@ -344,9 +416,11 @@ class App extends React.Component {
   render() {
     return (
       <>
-        {this.state.networkId && this.state.networkId !== '0x1' && (
+        {this.state.networkId && this.state.networkId === 5 && (
             <div className="banner-warning text-center text-dark bg-warning">
-              Welcome to Flyweight | Your metamask is currently connected to a testnet ({this.state.networkId}) | You can change your network in Metamask.
+              <div>Currently connected to a testnet (network id: {this.state.networkId}).</div>
+              <div>This network only supports the UNI &amp; WETH coins.</div>
+              <div>This decentralized app is open source on <a href={`https://goerli.etherscan.io/address/${ordersContractAddress}#code`} target="_blank" title="Opens etherscan in a new tab">Etherscan</a> &amp; <a href="https://github.com/0xmn1?tab=repositories" target="_blank" title="Opens the github repos in a new tab">Github</a>.</div>
             </div>
         )}
         <Navbar bg="light" expand="lg" className="mb-3" id="navbar">
@@ -362,9 +436,26 @@ class App extends React.Component {
                 <Nav.Link>Home</Nav.Link>
                 <Nav.Link>Dashboard</Nav.Link>
                 <Nav.Link>FAQ</Nav.Link>
-                <Nav.Link>Github</Nav.Link>
+                <Nav.Link href="https://github.com/0xmn1?tab=repositories" target="_blank">Github</Nav.Link>
               </Nav>
             </Navbar.Collapse>
+
+            {this.state.networkId ? (
+              <Button variant="primary" type="button" onClick={this.disconnect}>
+                Disconnect from Ethereum
+              </Button>
+            ) : (
+              <>
+                <Stack direction="horizontal" gap={2}>
+                  <Button variant="primary" type="button" onClick={this.toggleManualLoginModal}>
+                    Connect using plain-text
+                  </Button>
+                  <Button variant="primary" type="button" onClick={this.metamaskLogin}>
+                    Connect using Metamask
+                  </Button>
+                </Stack>
+              </>
+            )}
           </Container>
         </Navbar>
         <Container>
@@ -390,66 +481,80 @@ class App extends React.Component {
             <Col xs={12} lg={8}>
               <Card className="mb-3 mb-lg-0">
                 <Card.Body>
-                  <Card.Title>
-                    Orders
-                  </Card.Title>
-                  {!this.state.orders ? (
-                    <div className="d-flex align-items-center justify-content-center wrapper-loading">
-                      <ArrowClockwise color="lightgray" size={64} className="anim-spin" />
-                      <div>fetching blockchain data..</div>
-                    </div>
-                  ) : this.state.orders.length ? (
+                  {this.state.networkId ? (
                     <>
-                      <Card.Text className="text-muted">
-                        Your orders for <Badge bg="secondary">{this.state.account}</Badge> are listed here. You can cancel orders using the "Action" button on the right, & change addresses by selecting a different address in Metamask.
-                      </Card.Text>
-                      <Table responsive striped bordered hover>
-                        <thead>
-                          <tr>
-                            <th>ID</th>
-                            <th>Swap amount</th>
-                            <th>Swap from</th>
-                            <th>Swap to</th>
-                            <th>Trigger (USD)</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {this.state.orders.map(o => (
-                            <tr key={o.orderId}>
-                              <td>{o.anonOrderId}</td>
-                              <td>{o.tokenInAmount}</td>
-                              <td>{o.tokenIn}</td>
-                              <td>{o.tokenOut}</td>
-                              <td>
-                                {o.direction}&nbsp;${o.tokenInTriggerPrice}
-                              </td>
-                              <td>
-                                {o.orderState === 'Untriggered' ? (
-                                  <Badge bg="warning" text="dark">{o.orderState}</Badge>
-                                ) : (o.orderState === 'Executed' ? (
-                                  <Badge bg="success">{o.orderState}</Badge>
-                                ) : (o.orderState === 'Cancelled') ? (
-                                  <Badge bg="secondary">{o.orderState}</Badge>
-                                ) : (
-                                  <Badge>{o.orderState}</Badge>
-                                ))}
-                              </td>
-                              <td>
-                                <DropdownButton title="" onSelect={(actionType, _) => this.handleOrderAction(o.orderId, actionType)} variant="dark">
-                                  <Dropdown.Item eventKey="cancel" disabled={o.orderState === 'Executed' || o.orderState === 'Cancelled'}>Cancel and refund order</Dropdown.Item>
-                                </DropdownButton>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
+                      <Card.Title>
+                        Orders
+                      </Card.Title>
+
+                      {!this.state.orders ? (
+                        <div className="d-flex align-items-center justify-content-center wrapper-loading">
+                          <ArrowClockwise color="lightgray" size={64} className="anim-spin" />
+                          <div>reading ethereum contract..</div>
+                        </div>
+                      ) : this.state.orders.length ? (
+                        <>
+                          <Card.Text className="text-muted">
+                            Your orders for <Badge bg="secondary">{this.state.account}</Badge> are listed here. You can cancel orders using the "Action" button on the right, & change wallet addresses by selecting a different address in Metamask.
+                          </Card.Text>
+                          <Table responsive striped bordered hover>
+                            <thead>
+                              <tr>
+                                <th>ID</th>
+                                <th>Swap amount</th>
+                                <th>Swap from</th>
+                                <th>Swap to</th>
+                                <th>Trigger (USD)</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {this.state.orders.map(o => (
+                                <tr key={o.orderId}>
+                                  <td>{o.anonOrderId}</td>
+                                  <td>{o.tokenInAmount}</td>
+                                  <td>{o.tokenIn}</td>
+                                  <td>{o.tokenOut}</td>
+                                  <td>
+                                    {o.direction}&nbsp;${o.tokenInTriggerPrice}
+                                  </td>
+                                  <td>
+                                    {o.orderState === 'Untriggered' ? (
+                                      <Badge bg="warning" text="dark">{o.orderState}</Badge>
+                                    ) : (o.orderState === 'Executed' ? (
+                                      <Badge bg="success">{o.orderState}</Badge>
+                                    ) : (o.orderState === 'Cancelled') ? (
+                                      <Badge bg="secondary">{o.orderState}</Badge>
+                                    ) : (
+                                      <Badge>{o.orderState}</Badge>
+                                    ))}
+                                  </td>
+                                  <td>
+                                    <DropdownButton title="" onSelect={(actionType, _) => this.handleOrderAction(o.orderId, actionType)} variant="dark">
+                                      <Dropdown.Item eventKey="cancel" disabled={o.orderState === 'Executed' || o.orderState === 'Cancelled'}>Cancel and refund order</Dropdown.Item>
+                                    </DropdownButton>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </Table>
+                        </>
+                      ) : (
+                        <Card.Text>
+                          No orders found for <Badge bg="secondary">{this.state.account}</Badge>. You can create an order using the "New order" panel, or switch to another account in Metamask.
+                        </Card.Text>
+                      )}
                     </>
                   ) : (
-                    <Card.Text>
-                      No orders found for <Badge bg="secondary">{this.state.account}</Badge>. You can create an order using the "New order" panel, or switch to another account in Metamask.
-                    </Card.Text>
+                    <>
+                      <Card.Title>
+                        Welcome to Flyweight.
+                      </Card.Title>
+                      <Card.Text>
+                        To start using this decentralized app, please connect to Ethereum using one of the methods in the top-right.
+                      </Card.Text>
+                    </>
                   )}
                 </Card.Body>
               </Card>
@@ -459,7 +564,7 @@ class App extends React.Component {
                 <Card.Body>
                   <Card.Title>New order</Card.Title>
                   <Form>
-                    <Form.Group className="mb-3" controlId="formBasicEmail">
+                    <Form.Group className="mb-3">
                       <Form.Text>I want to swap...</Form.Text>
                       <Stack direction="horizontal" gap={1} className="mb-2">
                         <Form.Control type="number" placeholder="example: 10.0001" defaultValue={this.state.tokenInDecimalAmount} onChange={e => this.setState({ tokenInDecimalAmount: e.target.value })} />
@@ -504,6 +609,30 @@ class App extends React.Component {
             </Col>
           </Row>
         </Container>
+        <Modal show={this.state.showManualLoginModal} onHide={this.toggleManualLoginModal}>
+          <Modal.Header closeButton>
+            <Modal.Title>Connect using plain-text</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>This is an alternate decentralized connection method, if you prefer to not use Metamask yet.</p>
+            <p>This will allow you to view orders, which are stored on the blockchain.</p>
+            <h6>Wallet address:</h6>
+            <Form.Control type="text" placeholder="e.g.: '0xAF3e8346F1B57B0915851dBA3a1CDE65CF8dF522'" defaultValue={this.state.manualLoginAddress} onChange={e => this.setState({ manualLoginAddress: e.target.value })} />
+            <h6>Network:</h6>
+            <DropdownButton title={this.state.manualLoginNetworkName} onSelect={(manualLoginNetworkName, _) => this.setState({ manualLoginNetworkName })} variant="dark">
+              <Dropdown.Item eventKey="mainnet" active={this.state.manualLoginNetworkName === 'mainnet'}>mainnet</Dropdown.Item>
+              <Dropdown.Item eventKey="goerli" active={this.state.manualLoginNetworkName === 'goerli'}>goerli</Dropdown.Item>
+            </DropdownButton>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={this.toggleManualLoginModal}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={this.manualLogin}>
+              Connect
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </>
     );
   }
