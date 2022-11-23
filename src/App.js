@@ -137,7 +137,7 @@ class App extends React.Component {
   };
 
   manualLogin = () => {
-    const networkId = this.state.manualLoginNetworkName === 'mainnet' ? 1 : 5;
+    const networkId = this.state.manualLoginNetworkName === 'mainnet' ? '0x1' : '0x5';
     const account = this.state.manualLoginAddress;
     this.setState({
       networkId,
@@ -416,7 +416,7 @@ class App extends React.Component {
   render() {
     return (
       <>
-        {this.state.networkId && this.state.networkId === 5 && (
+        {this.state.networkId === '0x5' && (
             <div className="banner-warning text-center text-dark bg-warning">
               <div>Currently connected to a testnet (network id: {this.state.networkId}).</div>
               <div>This network only supports the UNI &amp; WETH coins.</div>
