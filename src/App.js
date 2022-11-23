@@ -7,25 +7,19 @@ import Big from 'big.js';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
-import Alert from 'react-bootstrap/Alert';
-import Stack from 'react-bootstrap/Stack';
-import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import Card from 'react-bootstrap/Card';
-import Navbar from 'react-bootstrap/Navbar';
-import Nav from 'react-bootstrap/Nav';
-import Fade from 'react-bootstrap/Fade';
-import Table from 'react-bootstrap/Table';
-import Badge from 'react-bootstrap/Badge';
-import Modal from 'react-bootstrap/Modal';
 import coinSymbols from './coin-symbols.json';
 import ordersContractAbi from './orders-smart-contract-abi.json';
 import erc20ContractAbi from './erc20-contract-abi.json';
 import { ethers } from 'ethers';
-import { ArrowClockwise } from 'react-bootstrap-icons';
 import detectEthereumProvider from '@metamask/detect-provider';
+
+import Header from './components/Header';
+import Banner from './components/Banner';
+import FlyweightAlert from './components/FlyweightAlert';
+import WelcomeCard from './components/WelcomeCard';
+import OrdersCard from './components/OrdersCard';
+import NewOrderCard from './components/NewOrderCard';
+import PlainTextLoginModal from './components/PlainTextLoginModal';
 
 const ordersContractAddress = '0xE58E94E87547A4FfE03f11Ee086adc31cEED3F03';
 const blockExplorerTransactionUrl = 'https://goerli.etherscan.io/tx';
@@ -353,7 +347,6 @@ class App extends React.Component {
         try {
           accounts = await providerMetamask.send('eth_requestAccounts', []);
         } catch (err) {
-          // chkpt
           console.log(err);
           this.showAlert('primary', 3, this.mapMetamaskErrorToMessage(err.code));
         }
@@ -413,226 +406,60 @@ class App extends React.Component {
 
   showAlert = (alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary) => this.setState({ alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary });
 
+  setManualLoginAddress = e => {
+    console.log(e.target.value);
+    this.setState({ manualLoginAddress: e.target.value });
+  };
+
+  setManualLoginNetworkName = manualLoginNetworkName => {
+    this.setState({ manualLoginNetworkName });
+  };
+
+  setTokenInDecimalAmount = e => {
+    this.setState({ tokenInDecimalAmount: e.target.value });
+  };
+
+  setTokenInSymbol = tokenInSymbol => {
+    this.setState({ tokenInSymbol });
+  };
+
+  setTokenOutSymbol = tokenOutSymbol => {
+    this.setState({ tokenOutSymbol });
+  };
+
+  setTriggerDirection = triggerDirection => {
+    this.setState({ triggerDirection });
+  };
+
+  setTriggerPrice = e => {
+    this.setState({ triggerPrice: e.target.value });
+  };
+
   render() {
     return (
       <>
-        {this.state.networkId === '0x5' && (
-            <div className="banner-warning text-center text-dark bg-warning">
-              <div>Currently connected to a testnet (network id: {this.state.networkId}).</div>
-              <div>This network only supports the UNI &amp; WETH coins.</div>
-              <div>This decentralized app is open source on <a href={`https://goerli.etherscan.io/address/${ordersContractAddress}#code`} target="_blank" title="Opens etherscan in a new tab">Etherscan</a> &amp; <a href="https://github.com/0xmn1?tab=repositories" target="_blank" title="Opens the github repos in a new tab">Github</a>.</div>
-            </div>
-        )}
-        <Navbar bg="light" expand="lg" className="mb-3" id="navbar">
-          <Container>
-            <Navbar.Brand>
-              <Stack direction="vertical" gap={0}>
-                <div><b>Fly</b>weight</div>
-              </Stack>
-            </Navbar.Brand>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
-            <Navbar.Collapse>
-              <Nav className="me-auto">
-                <Nav.Link>Home</Nav.Link>
-                <Nav.Link>Dashboard</Nav.Link>
-                <Nav.Link>FAQ</Nav.Link>
-                <Nav.Link href="https://github.com/0xmn1?tab=repositories" target="_blank">Github</Nav.Link>
-              </Nav>
-            </Navbar.Collapse>
-
-            {this.state.networkId ? (
-              <Button variant="primary" type="button" onClick={this.disconnect}>
-                Disconnect from Ethereum
-              </Button>
-            ) : (
-              <>
-                <Stack direction="horizontal" gap={2}>
-                  <Button variant="primary" type="button" onClick={this.toggleManualLoginModal}>
-                    Connect using plain-text
-                  </Button>
-                  <Button variant="primary" type="button" onClick={this.metamaskLogin}>
-                    Connect using Metamask
-                  </Button>
-                </Stack>
-              </>
-            )}
-          </Container>
-        </Navbar>
+        <Banner show={this.state.networkId === '0x5'} networkId={this.state.networkId} ordersContractAddress={ordersContractAddress} />
+        <Header isConnected={this.state.networkId} disconnect={this.disconnect} toggleManualLoginModal={this.toggleManualLoginModal} metamaskLogin={this.metamaskLogin} />
         <Container>
           <Row>
             <Col>
-              <Alert variant={this.state.alertVariant} show={this.state.alertMsgPrimary} onClose={() => this.showAlert(null, null, null, null)} className='wrapper-alert' transition={Fade} dismissible>
-                <h5 className="d-flex align-items-center mb-0">
-                <div className={this.state.alertVariant === 'info' ? 'anim-pulsing-circle anim-pulse' : null}></div>
-                  <div>{this.state.alertMsgPrimary}</div>
-                </h5>
-                <div>
-                  <small>{this.state.alertMsgSecondary}</small>
-                </div>
-                <Alert.Link href={this.alertCodeMap[this.state.alertCode]?.href} target="_blank">
-                  <small className="text-muted">
-                    {this.alertCodeMap[this.state.alertCode]?.label}
-                  </small>
-                </Alert.Link>
-              </Alert>
+              <FlyweightAlert alertVariant={this.state.alertVariant} alertMsgPrimary={this.state.alertMsgPrimary} alertMsgSecondary={this.state.alertMsgSecondary} showAlert={this.showAlert} alertCodeMap={this.alertCodeMap} alertCode={this.state.alertCode} />
             </Col>
           </Row>
           <Row>
             <Col xs={12} lg={8}>
-              <Card className="mb-3 mb-lg-0">
-                <Card.Body>
-                  {this.state.networkId ? (
-                    <>
-                      <Card.Title>
-                        Orders
-                      </Card.Title>
-
-                      {!this.state.orders ? (
-                        <div className="d-flex align-items-center justify-content-center wrapper-loading">
-                          <ArrowClockwise color="lightgray" size={64} className="anim-spin" />
-                          <div>reading ethereum contract..</div>
-                        </div>
-                      ) : this.state.orders.length ? (
-                        <>
-                          <Card.Text className="text-muted">
-                            Your orders for <Badge bg="secondary">{this.state.account}</Badge> are listed here. You can cancel orders using the "Action" button on the right, & change wallet addresses by selecting a different address in Metamask.
-                          </Card.Text>
-                          <Table responsive striped bordered hover>
-                            <thead>
-                              <tr>
-                                <th>ID</th>
-                                <th>Swap amount</th>
-                                <th>Swap from</th>
-                                <th>Swap to</th>
-                                <th>Trigger (USD)</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {this.state.orders.map(o => (
-                                <tr key={o.orderId}>
-                                  <td>{o.anonOrderId}</td>
-                                  <td>{o.tokenInAmount}</td>
-                                  <td>{o.tokenIn}</td>
-                                  <td>{o.tokenOut}</td>
-                                  <td>
-                                    {o.direction}&nbsp;${o.tokenInTriggerPrice}
-                                  </td>
-                                  <td>
-                                    {o.orderState === 'Untriggered' ? (
-                                      <Badge bg="warning" text="dark">{o.orderState}</Badge>
-                                    ) : (o.orderState === 'Executed' ? (
-                                      <Badge bg="success">{o.orderState}</Badge>
-                                    ) : (o.orderState === 'Cancelled') ? (
-                                      <Badge bg="secondary">{o.orderState}</Badge>
-                                    ) : (
-                                      <Badge>{o.orderState}</Badge>
-                                    ))}
-                                  </td>
-                                  <td>
-                                    <DropdownButton title="" onSelect={(actionType, _) => this.handleOrderAction(o.orderId, actionType)} variant="dark">
-                                      <Dropdown.Item eventKey="cancel" disabled={o.orderState === 'Executed' || o.orderState === 'Cancelled'}>Cancel and refund order</Dropdown.Item>
-                                    </DropdownButton>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </Table>
-                        </>
-                      ) : (
-                        <Card.Text>
-                          No orders found for <Badge bg="secondary">{this.state.account}</Badge>. You can create an order using the "New order" panel, or switch to another account in Metamask.
-                        </Card.Text>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <Card.Title>
-                        Welcome to Flyweight.
-                      </Card.Title>
-                      <Card.Text>
-                        To start using this decentralized app, please connect to Ethereum using one of the methods in the top-right.
-                      </Card.Text>
-                    </>
-                  )}
-                </Card.Body>
-              </Card>
+              {this.state.networkId ? (
+                <OrdersCard orders={this.state.orders} handleOrderAction={this.handleOrderAction} account={this.state.account} className="mb-3 mb-lg-0" />
+              ) : (
+                <WelcomeCard className="mb-3 mb-lg-0" />
+              )}
             </Col>
             <Col xs={12} lg={4}>
-              <Card>
-                <Card.Body>
-                  <Card.Title>New order</Card.Title>
-                  <Form>
-                    <Form.Group className="mb-3">
-                      <Form.Text>I want to swap...</Form.Text>
-                      <Stack direction="horizontal" gap={1} className="mb-2">
-                        <Form.Control type="number" placeholder="example: 10.0001" defaultValue={this.state.tokenInDecimalAmount} onChange={e => this.setState({ tokenInDecimalAmount: e.target.value })} />
-                        <DropdownButton title={this.state.tokenInSymbol} onSelect={(tokenInSymbol, _) => this.setState({ tokenInSymbol })} variant="dark">
-                          {coinSymbols.map(symbol => (
-                            <Dropdown.Item key={symbol} eventKey={symbol} active={this.state.tokenInSymbol === symbol} disabled={!this.state.whitelistedCoinSymbols.includes(symbol)}>{symbol}</Dropdown.Item>
-                          ))}
-                        </DropdownButton>
-                        <Form.Text>to</Form.Text>
-                        <DropdownButton title={this.state.tokenOutSymbol} onSelect={(tokenOutSymbol, _) => this.setState({ tokenOutSymbol })} variant="dark">
-                          {coinSymbols.map(symbol => (
-                            <Dropdown.Item key={symbol} eventKey={symbol} active={this.state.tokenOutSymbol === symbol} disabled={!this.state.whitelistedCoinSymbols.includes(symbol)}>{symbol}</Dropdown.Item>
-                          ))}
-                        </DropdownButton>
-                      </Stack>
-                      <Form.Text>when the price of <span className="fw-bold">{this.state.tokenInSymbol}</span> becomes</Form.Text>
-                      <Stack direction="horizontal" gap={1}>
-                        <DropdownButton title={this.getOrderDirectionLabel(this.state.triggerDirection)} onSelect={(triggerDirection, _) => this.setState({ triggerDirection })} variant="dark">
-                          <Dropdown.Item eventKey={2} active={this.state.triggerDirection === 2}>{this.getOrderDirectionLabel(2)}</Dropdown.Item>
-                          <Dropdown.Item eventKey={1} active={this.state.triggerDirection === 1}>{this.getOrderDirectionLabel(1)}</Dropdown.Item>
-                          <Dropdown.Item eventKey={0} active={this.state.triggerDirection === 0}>{this.getOrderDirectionLabel(0)}</Dropdown.Item>
-                        </DropdownButton>
-                        <Form.Control type="number" placeholder="example: 250.90" defaultValue={this.state.triggerPrice} onChange={e => this.setState({ triggerPrice: e.target.value })} />
-                        <Form.Text>USD$</Form.Text>
-                      </Stack>
-                    </Form.Group>
-                  </Form>
-                </Card.Body>
-                <Card.Footer>
-                  <div className="d-flex align-items-center justify-content-between">
-                    <Button variant="primary" type="button" onClick={this.tryAddOrder}>
-                      Create order
-                    </Button>
-                    <Card.Text>
-                      <small className="text-muted text-right">
-                        (opens <a href="https://metamask.io/" target="_blank" title="Opens metamask home page in a new browser tab">Metamask</a>)
-                      </small>
-                    </Card.Text>
-                  </div>
-                </Card.Footer>
-              </Card>
+                <NewOrderCard tokenInDecimalAmount={this.state.tokenInDecimalAmount} tokenInSymbol={this.state.tokenInSymbol} whitelistedCoinSymbols={this.state.whitelistedCoinSymbols} tokenOutSymbol={this.state.tokenOutSymbol} getOrderDirectionLabel={this.getOrderDirectionLabel} triggerDirection={this.state.triggerDirection} triggerPrice={this.state.triggerPrice} tryAddOrder={this.tryAddOrder} coinSymbols={coinSymbols} setTokenInDecimalAmount={this.setTokenInDecimalAmount} setTokenInSymbol={this.setTokenInSymbol} setTokenOutSymbol={this.setTokenOutSymbol} setTriggerDirection={this.setTriggerDirection} setTriggerPrice={this.setTriggerPrice} />
             </Col>
           </Row>
         </Container>
-        <Modal show={this.state.showManualLoginModal} onHide={this.toggleManualLoginModal}>
-          <Modal.Header closeButton>
-            <Modal.Title>Connect using plain-text</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <p>This is an alternate decentralized connection method, if you prefer to not use Metamask yet.</p>
-            <p>This will allow you to view orders, which are stored on the blockchain.</p>
-            <h6>Wallet address:</h6>
-            <Form.Control type="text" placeholder="e.g.: '0xAF3e8346F1B57B0915851dBA3a1CDE65CF8dF522'" defaultValue={this.state.manualLoginAddress} onChange={e => this.setState({ manualLoginAddress: e.target.value })} />
-            <h6>Network:</h6>
-            <DropdownButton title={this.state.manualLoginNetworkName} onSelect={(manualLoginNetworkName, _) => this.setState({ manualLoginNetworkName })} variant="dark">
-              <Dropdown.Item eventKey="mainnet" active={this.state.manualLoginNetworkName === 'mainnet'}>mainnet</Dropdown.Item>
-              <Dropdown.Item eventKey="goerli" active={this.state.manualLoginNetworkName === 'goerli'}>goerli</Dropdown.Item>
-            </DropdownButton>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={this.toggleManualLoginModal}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={this.manualLogin}>
-              Connect
-            </Button>
-          </Modal.Footer>
-        </Modal>
+        <PlainTextLoginModal show={this.state.showManualLoginModal} onHide={this.toggleManualLoginModal} defaultValue={this.state.manualLoginAddress} manualLoginNetworkName={this.state.manualLoginNetworkName} manualLogin={this.manualLogin} setManualLoginAddress={this.setManualLoginAddress} setManualLoginNetworkName={this.setManualLoginNetworkName} />
       </>
     );
   }
