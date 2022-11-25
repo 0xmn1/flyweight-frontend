@@ -3,10 +3,13 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import React from 'react';
+import watch from 'redux-watch'
 import Big from 'big.js';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
+import { store, disconnected } from './redux/store';
+
 import coinSymbols from './coin-symbols.json';
 import ordersContractAbi from './orders-smart-contract-abi.json';
 import erc20ContractAbi from './erc20-contract-abi.json';
@@ -27,6 +30,7 @@ const blockExplorerTransactionUrl = 'https://goerli.etherscan.io/tx';
 class App extends React.Component {
   constructor() {
     super();
+
     this.state = {
       orders: null,
       tokenInDecimalAmount: 0.001,
@@ -37,11 +41,8 @@ class App extends React.Component {
       whitelistedCoinSymbols: [],
       metamaskEventsBound: false,
       isMetamaskProviderDetected: true,
-      networkId: null,
-      account: null,
+      isConnected: false,
       showManualLoginModal: false,
-      manualLoginAddress: '0xAF3e8346F1B57B0915851dBA3a1CDE65CF8dF522',
-      manualLoginNetworkName: 'goerli',
       alertMsgPrimary: null,
       alertMsgSecondary: null,
       alertVariant: null,
@@ -95,6 +96,8 @@ class App extends React.Component {
   }
 
   async componentDidMount() {
+    this.subscribeConnected();
+    this.subscribeDisconnected();
     await this.setWhitelistedCoinSymbols();
 
     const isMetamaskProviderDetected = await detectEthereumProvider();
@@ -108,16 +111,13 @@ class App extends React.Component {
         if (accounts.length) {
           this.setUserOrderDashboard(accounts[0]);
         } else {
-          this.setState({
-            networkId: null,
-            account: null
-          });
+          store.dispatch(disconnected());
         }
       });
       
       window.ethereum.on('chainChanged', networkId => {
-        this.setUserOrderDashboard();
-        this.setState({ networkId });
+        store.dispatch(connected({ networkId }));
+        this.setUserOrderDashboard(store.getState().account);
       });
 
       this.setState({ metamaskEventsBound: true });
@@ -128,18 +128,6 @@ class App extends React.Component {
     this.setState(prevState => ({
       showManualLoginModal: !prevState.showManualLoginModal
     }));
-  };
-
-  manualLogin = () => {
-    const networkId = this.state.manualLoginNetworkName === 'mainnet' ? '0x1' : '0x5';
-    const account = this.state.manualLoginAddress;
-    this.setState({
-      networkId,
-      account,
-      showManualLoginModal: false
-    });
-
-    this.setUserOrderDashboard(account);
   };
 
   metamaskLogin = async () => {
@@ -156,16 +144,32 @@ class App extends React.Component {
     }
 
     const account = accounts[0];
-    this.setState({ networkId, account });
+    store.dispatch(connected({ networkId, account }));
     this.showAlert(null, null, null, null);
     this.setUserOrderDashboard(account);
   };
 
-  disconnect = () => {
-    this.setState({
-      networkId: null,
-      account: null
-    });
+  subscribeConnected = () => {
+    const w = watch(store.getState, 'account');
+    store.subscribe(w((newAccount, oldAccount) => {
+      if (oldAccount !== newAccount && newAccount) {
+        this.setState({
+          showManualLoginModal: false,
+          isConnected: true
+        });
+
+        this.setUserOrderDashboard(store.getState().account);
+      }
+    }));
+  };
+
+  subscribeDisconnected = () => {
+    const w = watch(store.getState, 'account');
+    store.subscribe(w((newAccount, oldAccount) => {
+      if (oldAccount !== newAccount && !newAccount) {
+        this.setState({ isConnected: false });
+      }
+    }));
   };
 
   createAlchemyProvider = () => {
@@ -406,15 +410,6 @@ class App extends React.Component {
 
   showAlert = (alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary) => this.setState({ alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary });
 
-  setManualLoginAddress = e => {
-    console.log(e.target.value);
-    this.setState({ manualLoginAddress: e.target.value });
-  };
-
-  setManualLoginNetworkName = manualLoginNetworkName => {
-    this.setState({ manualLoginNetworkName });
-  };
-
   setTokenInDecimalAmount = e => {
     this.setState({ tokenInDecimalAmount: e.target.value });
   };
@@ -438,8 +433,8 @@ class App extends React.Component {
   render() {
     return (
       <>
-        <Banner show={this.state.networkId === '0x5'} networkId={this.state.networkId} ordersContractAddress={ordersContractAddress} />
-        <Header isConnected={this.state.networkId} disconnect={this.disconnect} toggleManualLoginModal={this.toggleManualLoginModal} metamaskLogin={this.metamaskLogin} />
+        <Banner show={store.getState().networkId === '0x5'} networkId={store.getState().networkId} ordersContractAddress={ordersContractAddress} />
+        <Header isConnected={this.state.isConnected} toggleManualLoginModal={this.toggleManualLoginModal} metamaskLogin={this.metamaskLogin} />
         <Container>
           <Row>
             <Col>
@@ -448,8 +443,8 @@ class App extends React.Component {
           </Row>
           <Row>
             <Col xs={12} lg={8}>
-              {this.state.networkId ? (
-                <OrdersCard orders={this.state.orders} handleOrderAction={this.handleOrderAction} account={this.state.account} className="mb-3 mb-lg-0" />
+              {store.getState().networkId ? (
+                <OrdersCard orders={this.state.orders} handleOrderAction={this.handleOrderAction} account={store.getState().account} className="mb-3 mb-lg-0" />
               ) : (
                 <WelcomeCard className="mb-3 mb-lg-0" />
               )}
@@ -459,8 +454,8 @@ class App extends React.Component {
             </Col>
           </Row>
         </Container>
-        <PlainTextLoginModal show={this.state.showManualLoginModal} onHide={this.toggleManualLoginModal} defaultValue={this.state.manualLoginAddress} manualLoginNetworkName={this.state.manualLoginNetworkName} manualLogin={this.manualLogin} setManualLoginAddress={this.setManualLoginAddress} setManualLoginNetworkName={this.setManualLoginNetworkName} />
-      </>
+        <PlainTextLoginModal show={this.state.showManualLoginModal} onHide={this.toggleManualLoginModal} defaultValue={store.getState().manualLoginAddress} />
+      </> 
     );
   }
 }

@@ -5,6 +5,7 @@ import Container from 'react-bootstrap/Container';
 import Stack from 'react-bootstrap/Stack';
 import Button from 'react-bootstrap/Button';
 import styles from './Header.module.scss';
+import { store, disconnected } from '../../redux/store';
 
 const Header = props => (
     <Navbar bg="light" expand="lg" className="mb-3" id={styles.wrapper}>
@@ -25,7 +26,7 @@ const Header = props => (
       </Navbar.Collapse>
 
       {props.isConnected ? (
-        <Button variant="primary" type="button" onClick={props.disconnect}>
+        <Button variant="primary" type="button" onClick={() => store.dispatch(disconnected())}>
           Disconnect from Ethereum
         </Button>
       ) : (

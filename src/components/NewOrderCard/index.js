@@ -1,3 +1,4 @@
+import { render } from 'node-sass';
 import React from 'react';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
@@ -6,7 +7,7 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import Form from 'react-bootstrap/Form';
 import Stack from 'react-bootstrap/Stack';
 
-const NewOrderCard = props => (
+const NewOrderCard = () => (
     <Card>
         <Card.Body>
             <Card.Title>New order</Card.Title>
@@ -14,27 +15,27 @@ const NewOrderCard = props => (
                 <Form.Group className="mb-3">
                     <Form.Text>I want to swap...</Form.Text>
                     <Stack direction="horizontal" gap={1} className="mb-2">
-                        <Form.Control type="number" placeholder="example: 10.0001" defaultValue={props.tokenInDecimalAmount} onChange={props.setTokenInDecimalAmount} />
-                        <DropdownButton title={props.tokenInSymbol} onSelect={props.setTokenInSymbol} variant="dark">
-                            {props.coinSymbols.map(symbol => (
-                            <Dropdown.Item key={symbol} eventKey={symbol} active={props.tokenInSymbol === symbol} disabled={!props.whitelistedCoinSymbols.includes(symbol)}>{symbol}</Dropdown.Item>
+                        <Form.Control type="number" placeholder="example: 10.0001" defaultValue={this.props.tokenInDecimalAmount} onChange={this.props.setTokenInDecimalAmount} />
+                        <DropdownButton title={this.props.tokenInSymbol} onSelect={this.props.setTokenInSymbol} variant="dark">
+                            {this.props.coinSymbols.map(symbol => (
+                            <Dropdown.Item key={symbol} eventKey={symbol} active={this.props.tokenInSymbol === symbol} disabled={!this.props.whitelistedCoinSymbols.includes(symbol)}>{symbol}</Dropdown.Item>
                             ))}
                         </DropdownButton>
                         <Form.Text>to</Form.Text>
-                        <DropdownButton title={props.tokenOutSymbol} onSelect={props.setTokenOutSymbol} variant="dark">
-                            {props.coinSymbols.map(symbol => (
-                            <Dropdown.Item key={symbol} eventKey={symbol} active={props.tokenOutSymbol === symbol} disabled={!props.whitelistedCoinSymbols.includes(symbol)}>{symbol}</Dropdown.Item>
+                        <DropdownButton title={this.props.tokenOutSymbol} onSelect={this.props.setTokenOutSymbol} variant="dark">
+                            {this.props.coinSymbols.map(symbol => (
+                            <Dropdown.Item key={symbol} eventKey={symbol} active={this.props.tokenOutSymbol === symbol} disabled={!this.props.whitelistedCoinSymbols.includes(symbol)}>{symbol}</Dropdown.Item>
                             ))}
                         </DropdownButton>
                     </Stack>
-                    <Form.Text>when the price of <span className="fw-bold">{props.tokenInSymbol}</span> becomes</Form.Text>
+                    <Form.Text>when the price of <span className="fw-bold">{this.props.tokenInSymbol}</span> becomes</Form.Text>
                     <Stack direction="horizontal" gap={1}>
-                        <DropdownButton title={props.getOrderDirectionLabel(props.triggerDirection)} onSelect={props.setTriggerDirection} variant="dark">
-                            <Dropdown.Item eventKey={2} active={props.triggerDirection === 2}>{props.getOrderDirectionLabel(2)}</Dropdown.Item>
-                            <Dropdown.Item eventKey={1} active={props.triggerDirection === 1}>{props.getOrderDirectionLabel(1)}</Dropdown.Item>
-                            <Dropdown.Item eventKey={0} active={props.triggerDirection === 0}>{props.getOrderDirectionLabel(0)}</Dropdown.Item>
+                        <DropdownButton title={this.props.getOrderDirectionLabel(this.props.triggerDirection)} onSelect={this.props.setTriggerDirection} variant="dark">
+                            <Dropdown.Item eventKey={2} active={this.props.triggerDirection === 2}>{this.props.getOrderDirectionLabel(2)}</Dropdown.Item>
+                            <Dropdown.Item eventKey={1} active={this.props.triggerDirection === 1}>{this.props.getOrderDirectionLabel(1)}</Dropdown.Item>
+                            <Dropdown.Item eventKey={0} active={this.props.triggerDirection === 0}>{this.props.getOrderDirectionLabel(0)}</Dropdown.Item>
                         </DropdownButton>
-                        <Form.Control type="number" placeholder="example: 250.90" defaultValue={props.triggerPrice} onChange={props.setTriggerPrice} />
+                        <Form.Control type="number" placeholder="example: 250.90" defaultValue={this.props.triggerPrice} onChange={this.props.setTriggerPrice} />
                         <Form.Text>USD$</Form.Text>
                     </Stack>
                 </Form.Group>
@@ -42,7 +43,7 @@ const NewOrderCard = props => (
         </Card.Body>
         <Card.Footer>
             <div className="d-flex align-items-center justify-content-between">
-                <Button variant="primary" type="button" onClick={props.tryAddOrder}>
+                <Button variant="primary" type="button" onClick={this.props.tryAddOrder}>
                     Create order
                 </Button>
                 <Card.Text>
