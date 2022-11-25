@@ -5,6 +5,7 @@ import Container from 'react-bootstrap/Container';
 import Stack from 'react-bootstrap/Stack';
 import Button from 'react-bootstrap/Button';
 import styles from './Header.module.scss';
+import { connectionStore, disconnected } from '../../redux/connectionStore';
 
 const Header = props => (
     <Navbar bg="light" expand="lg" className="mb-3" id={styles.wrapper}>
@@ -25,8 +26,8 @@ const Header = props => (
       </Navbar.Collapse>
 
       {props.isConnected ? (
-        <Button variant="primary" type="button" onClick={props.disconnect}>
-          Disconnect from Ethereum
+        <Button variant="primary" type="button" onClick={() => connectionStore.dispatch(disconnected())}>
+          Disconnect from ethereum
         </Button>
       ) : (
         <>
@@ -34,7 +35,7 @@ const Header = props => (
             <Button variant="primary" type="button" onClick={props.toggleManualLoginModal}>
               Connect using plain-text
             </Button>
-            <Button variant="primary" type="button" onClick={props.metamaskLogin}>
+            <Button variant={props.isMetamaskProviderDetected === false ? 'secondary' : 'primary'} type="button" onClick={props.metamaskLogin} disabled={props.isMetamaskProviderDetected === false}>
               Connect using Metamask
             </Button>
           </Stack>
