@@ -3,22 +3,49 @@ import Alert from 'react-bootstrap/Alert';
 import Fade from 'react-bootstrap/Fade';
 import Ping from '../Ping';
 import styles from './FlyweightAlert.module.scss';
+import { alertCodeMap, emptyAlert } from '../../utils/alertMap';
+import { alertStore, alertSet } from '../../redux/alertStore';
 
-const FlyweightAlert = props => (
-    <Alert variant={props.alertVariant} show={props.alertMsgPrimary} onClose={() => props.showAlert(null, null, null, null)} transition={Fade} className='wrapper-alert' id={styles.wrapper} dismissible>
-        <h5 className="d-flex align-items-center mb-0">
-            <Ping show={props.alertVariant === 'info'} />
-            <div>{props.alertMsgPrimary}</div>
-        </h5>
-        <div>
-            <small>{props.alertMsgSecondary}</small>
-        </div>
-        <Alert.Link href={props.alertCodeMap[props.alertCode]?.href} target="_blank">
-            <small className="text-muted">
-            {props.alertCodeMap[props.alertCode]?.label}
-            </small>
-        </Alert.Link>
-    </Alert>
-);
+export default class FlyweightAlert extends React.Component {
+    constructor() {
+        super();
+        this.state = {
+            show: false
+        };
+    }
 
-export default FlyweightAlert;
+    componentDidMount() {
+        this.subscribeAlert();
+    }
+
+    subscribeAlert = () => {
+        alertStore.subscribe(() => {
+            const show = !!alertStore.getState().code;
+            this.setState({ show });
+        });
+    };
+
+    render() {
+        if (!this.state.show) {
+            return null;
+        }
+    
+        const alertState = alertStore.getState();
+        return this.state.show && (
+            <Alert variant={alertState.variant} show={alertState.msgPrimary} onClose={() => alertStore.dispatch(alertSet(emptyAlert))} transition={Fade} className='wrapper-alert' id={styles.wrapper} dismissible>
+                <h5 className="d-flex align-items-center mb-0">
+                    <Ping show={alertState.variant === 'info'} />
+                    <div>{alertState.msgPrimary}</div>
+                </h5>
+                <div>
+                    <small>{alertState.msgSecondary}</small>
+                </div>
+                <Alert.Link href={alertCodeMap[alertState.code]?.href} target="_blank">
+                    <small className="text-muted">
+                        {alertCodeMap[alertState.code]?.label}
+                    </small>
+                </Alert.Link>
+            </Alert>
+        );
+    }
+}

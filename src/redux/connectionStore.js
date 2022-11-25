@@ -1,7 +1,7 @@
 import { createSlice, configureStore } from '@reduxjs/toolkit';
 
 const slice = createSlice({
-    name: 'store',
+    name: 'connectionStore',
     initialState: {
         networkId: null,
         account: null
@@ -18,9 +18,9 @@ const slice = createSlice({
     }
 });
 
-const store = configureStore({
+const connectionStore = configureStore({
     reducer: slice.reducer
 });
 
 const { connected, disconnected } = slice.actions;
-export { store, connected, disconnected };
+export { connectionStore, connected, disconnected };

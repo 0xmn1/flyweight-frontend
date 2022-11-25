@@ -4,7 +4,7 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
-import { store, connected } from '../../redux/store';
+import { connectionStore, connected } from '../../redux/connectionStore';
 
 export default class PlainTextLoginModal extends React.Component {
     constructor() {
@@ -22,14 +22,14 @@ export default class PlainTextLoginModal extends React.Component {
     }
 
     connected = () => {
-        store.dispatch(connected({
+        connectionStore.dispatch(connected({
             networkId: this.state.networkId,
             account: this.state.account
         }));
     };
 
     render() {
-        const networkName = store.getState().manualLoginNetworkName;
+        const networkName = connectionStore.getState().manualLoginNetworkName;
         const networkOptions = Object.keys(this.networkNames).map(networkId => (
             <Dropdown.Item key={networkId} eventKey={networkId} active={this.state.networkId === networkId}>{this.networkNames[networkId]}</Dropdown.Item>
         ));
