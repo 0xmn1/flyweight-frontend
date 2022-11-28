@@ -9,7 +9,7 @@ import { createMetamaskProvider, createNodeProvider, createOrdersContract } from
 import { addOrder } from '../../utils/ordersContractFactory';
 import { alertCodes, mapMetamaskErrorToMessage } from '../../utils/alertMap';
 import { networkNames, nodeProviderPublicApiKeys } from '../../utils/networkMap';
-import { alertStore, alertSet } from '../../redux/alertStore';
+import { alertStore, alertSet, alertClear } from '../../redux/alertStore';
 import { ordersStore, checked } from '../../redux/ordersStore';
 import ordersContractAbi from '../../orders-smart-contract-abi.json';
 import coinSymbols from '../../coin-symbols.json';
@@ -60,7 +60,7 @@ export default class NewOrderCard extends React.Component {
         } else if (this.state.triggerPrice < 0) {
             this.setAlert('warning', alertCodes.FAQ, 'Please select a non-negative trigger price.', `Your order is currently configured to trigger at "${this.state.triggerPrice} $USD"`);
         } else {
-            this.setAlert(null, null, null, null);
+            alertStore.dispatch(alertClear());
             const provider = createMetamaskProvider(window);
             const signer = provider.getSigner();
             let accounts = await provider.send('eth_accounts', []);

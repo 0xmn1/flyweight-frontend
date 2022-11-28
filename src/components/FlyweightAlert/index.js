@@ -3,7 +3,7 @@ import Alert from 'react-bootstrap/Alert';
 import Fade from 'react-bootstrap/Fade';
 import Ping from '../Ping';
 import styles from './FlyweightAlert.module.scss';
-import { alertCodeMap, emptyAlert } from '../../utils/alertMap';
+import { alertCodeMap } from '../../utils/alertMap';
 import { alertStore, alertSet } from '../../redux/alertStore';
 
 export default class FlyweightAlert extends React.Component {
@@ -32,7 +32,7 @@ export default class FlyweightAlert extends React.Component {
     
         const alertState = alertStore.getState();
         return this.state.show && (
-            <Alert variant={alertState.variant} show={alertState.msgPrimary} onClose={() => alertStore.dispatch(alertSet(emptyAlert))} transition={Fade} className='wrapper-alert' id={styles.wrapper} dismissible>
+            <Alert variant={alertState.variant} show={alertState.msgPrimary} onClose={() => alertStore.dispatch(alertClear())} transition={Fade} className='wrapper-alert' id={styles.wrapper} dismissible>
                 <h5 className="d-flex align-items-center mb-0">
                     <Ping show={alertState.variant === 'info'} />
                     <div>{alertState.msgPrimary}</div>

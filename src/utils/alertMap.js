@@ -39,13 +39,6 @@ export const alertCodeMap = {
     }
 };
 
-export const emptyAlert = {
-    variant: null,
-    code: null,
-    msgPrimary: null,
-    msgSecondary: null
-};
-
 export const mapMetamaskErrorToMessage = errorReasonOrCode => {
     switch (errorReasonOrCode) {
         case 'user rejected transaction':

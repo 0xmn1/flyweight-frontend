@@ -26,7 +26,7 @@ import WelcomeCard from './components/WelcomeCard';
 import OrdersCard from './components/OrdersCard';
 import NewOrderCard from './components/NewOrderCard';
 import PlainTextLoginModal from './components/PlainTextLoginModal';
-import { alertStore } from './redux/alertStore';
+import { alertStore, alertSet } from './redux/alertStore';
 import { ordersStore, checked } from './redux/ordersStore';
 
 const ordersContractAddress = process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS;
@@ -91,13 +91,19 @@ class App extends React.Component {
       accounts = await providerMetamask.send('eth_requestAccounts', []);
     } catch (err) {
       console.log(err);
-      this.showAlert('secondary', 7, mapMetamaskErrorToMessage(err.code), 'If you prefer, you can also connect by "pasting" a wallet address into a textbox.');
+      alertStore.dispatch(alertSet({
+        variant: 'secondary',
+        code: 7,
+        msgPrimary: mapMetamaskErrorToMessage(err.code),
+        msgSecondary: 'If you prefer, you can also connect by "pasting" a wallet address into a textbox.'
+      }));
+
       return;
     }
 
     const account = accounts[0];
     connectionStore.dispatch(connected({ networkId, account }));
-    this.showAlert(null, null, null, null);
+    alertStore.dispatch(alertClear());
   };
 
   subscribeConnected = () => {
@@ -120,10 +126,6 @@ class App extends React.Component {
       }
     }));
   };
-
-  createNodeProvider = () => createNodeProvider(providerNetworkName, providerPublicApiKey);
-
-  createOrdersContract = providerOrSigner => createOrdersContract(ordersContractAddress, ordersContractAbi, providerOrSigner);
 
   showAlert = (alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary) => this.setState({ alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary });
 
