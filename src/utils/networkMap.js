@@ -12,3 +12,9 @@ export const blockExplorerUrls = {
     '0x1': process.env.REACT_APP_BLOCK_EXPLORER_TRANSACTION_URL_MAINNET,
     '0x5': process.env.REACT_APP_BLOCK_EXPLORER_TRANSACTION_URL_GOERLI
 };
+
+export const orderContractAddresses = {
+    '0x1': process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS_MAINNET,
+    '0x5': process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS_GOERLI
+}; 
+

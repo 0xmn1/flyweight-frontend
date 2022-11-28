@@ -14,8 +14,7 @@ import { alertStore, alertSet } from '../../redux/alertStore';
 import { createOrdersContract } from '../../utils/ethersFactory';
 import { createNodeProvider } from '../../utils/ethersFactory';
 import { mapMetamaskErrorToMessage } from '../../utils/alertMap';
-import { blockExplorerUrls } from '../../utils/networkMap';
-import { networkNames, nodeProviderPublicApiKeys } from '../../utils/networkMap';
+import { blockExplorerUrls, orderContractAddresses, networkNames, nodeProviderPublicApiKeys } from '../../utils/networkMap';
 import erc20ContractAbi from '../../erc20-contract-abi.json';
 import ordersContractAbi from '../../orders-smart-contract-abi.json';
 
@@ -67,8 +66,10 @@ export default class OrdersCard extends React.Component {
         return createNodeProvider(providerNetworkName, providerApiKey);
     };
 
-    createOrdersContract = providerOrSigner =>
-        createOrdersContract(process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS, ordersContractAbi, providerOrSigner);
+    createOrdersContract = providerOrSigner => {
+        const address = orderContractAddresses[connectionStore.getState().networkId];
+        return createOrdersContract(address, ordersContractAbi, providerOrSigner);
+    };
 
     setUserOrderDashboard = async (account) => {
         this.setState({ orders: null });

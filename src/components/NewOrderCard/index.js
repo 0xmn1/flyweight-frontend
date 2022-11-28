@@ -6,10 +6,12 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import Form from 'react-bootstrap/Form';
 import Stack from 'react-bootstrap/Stack';
 import { createMetamaskProvider, createNodeProvider, createOrdersContract } from '../../utils/ethersFactory';
+import { orderContractAddresses } from '../../utils/networkMap';
 import { addOrder } from '../../utils/ordersContractFactory';
 import { alertCodes, mapMetamaskErrorToMessage } from '../../utils/alertMap';
 import { networkNames, nodeProviderPublicApiKeys } from '../../utils/networkMap';
 import { alertStore, alertSet, alertClear } from '../../redux/alertStore';
+import { connectionStore } from '../../redux/connectionStore';
 import { ordersStore, checked } from '../../redux/ordersStore';
 import ordersContractAbi from '../../orders-smart-contract-abi.json';
 import coinSymbols from '../../coin-symbols.json';
@@ -39,10 +41,12 @@ export default class NewOrderCard extends React.Component {
     }
 
     getWhitelistedCoinSymbols = async () => {
-        const providerNetworkName = networkNames[process.env.REACT_APP_NETWORK_ID];
-        const providerApiKey = nodeProviderPublicApiKeys[process.env.REACT_APP_NETWORK_ID];
+        const networkId = connectionStore.getState().networkId;
+        const providerNetworkName = networkNames[networkId];
+        const providerApiKey = nodeProviderPublicApiKeys[networkId];
         const provider = createNodeProvider(providerNetworkName, providerApiKey);
-        const contract = createOrdersContract(process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS, ordersContractAbi, provider);
+        const ordersContractAddress = orderContractAddresses[networkId];
+        const contract = createOrdersContract(ordersContractAddress, ordersContractAbi, provider);
         const res = await contract.functions.getWhitelistedSymbols(coinSymbols);
         return res[0];
     };

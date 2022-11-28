@@ -5,6 +5,8 @@ import ordersContractAbi from '../orders-smart-contract-abi.json';
 import erc20ContractAbi from '../erc20-contract-abi.json';
 import { alertStore, alertSet } from '../redux/alertStore';
 import { mapMetamaskErrorToMessage } from '../utils/alertMap';
+import { connectionStore } from '../redux/connectionStore';
+import { orderContractAddresses } from '../utils/networkMap';
 
 const setAlert = (variant, code, msgPrimary, msgSecondary) => {
     const alert = { variant, code, msgPrimary, msgSecondary };
@@ -12,7 +14,8 @@ const setAlert = (variant, code, msgPrimary, msgSecondary) => {
 };
 
 export const addOrder = async (signer, order) => {
-    const contract = createOrdersContract(process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS, ordersContractAbi, signer);
+    const contractAddress = orderContractAddresses[connectionStore.getState().networkId];
+    const contract = createOrdersContract(contractAddress, ordersContractAbi, signer);
     const tokenInAddresses = await contract.functions.tryGetTokenAddress(order.tokenInSymbol);
     const tokenOutAddresses = await contract.functions.tryGetTokenAddress(order.tokenOutSymbol);
     const tokenInAddress = tokenInAddresses[0];
@@ -42,7 +45,7 @@ export const addOrder = async (signer, order) => {
         }
 
         setAlert('primary', 4, 'Please confirm transaction [2] of [2] in metamask.', 'This allows you to deposit the coins for your order to automatically swap via uniswap. Users can cancel untriggered orders at any time to get their coins sent back');
-        const txDeposit = await tokenInContract.transfer(process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS, tokenInAmountStr);
+        const txDeposit = await tokenInContract.transfer(contract.address, tokenInAmountStr);
 
         setAlert('info', 5, 'Finalizing your order now, boop beep...', 'Awaiting network approval. Remember the bull market days when gas was 2000+ gwei? Wen zk sync token');
         const txDepositReceipt = await txDeposit.wait();

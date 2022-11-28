@@ -14,7 +14,7 @@ import { createNodeProvider, createOrdersContract } from './utils/ethersFactory'
 import coinSymbols from './coin-symbols.json';
 import ordersContractAbi from './orders-smart-contract-abi.json';
 import erc20ContractAbi from './erc20-contract-abi.json';
-import { networkNames, nodeProviderPublicApiKeys } from './utils/networkMap';
+import { networkNames, nodeProviderPublicApiKeys, orderContractAddresses } from './utils/networkMap';
 import { mapMetamaskErrorToMessage } from './utils/alertMap';
 import { ethers } from 'ethers';
 import detectEthereumProvider from '@metamask/detect-provider';
@@ -29,9 +29,10 @@ import PlainTextLoginModal from './components/PlainTextLoginModal';
 import { alertStore, alertSet } from './redux/alertStore';
 import { ordersStore, checked } from './redux/ordersStore';
 
-const ordersContractAddress = process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS;
-const providerPublicApiKey = nodeProviderPublicApiKeys[process.env.REACT_APP_NETWORK_ID];
-const providerNetworkName = networkNames[process.env.REACT_APP_NETWORK_ID];
+const networkId = connectionStore.getState().networkId;
+const ordersContractAddress =  orderContractAddresses[connectionStore.getState().networkId];
+const providerPublicApiKey = nodeProviderPublicApiKeys[networkId];
+const providerNetworkName = networkNames[networkId];
 
 class App extends React.Component {
   constructor() {
@@ -127,12 +128,10 @@ class App extends React.Component {
     }));
   };
 
-  showAlert = (alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary) => this.setState({ alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary });
-
   render() {
     return (
       <>
-        <Banner show={connectionStore.getState().networkId === '0x5'} networkId={connectionStore.getState().networkId} ordersContractAddress={ordersContractAddress} />
+        <Banner show={connectionStore.getState().networkId === '0x5'} />
         <Header isConnected={this.state.isConnected} isMetamaskProviderDetected={this.state.isMetamaskProviderDetected} toggleManualLoginModal={this.toggleManualLoginModal} metamaskLogin={this.metamaskLogin} />
         <Container>
           <Row>
@@ -142,7 +141,7 @@ class App extends React.Component {
           </Row>
           <Row>
             <Col xs={12} lg={8}>
-              {connectionStore.getState().networkId ? (
+              {connectionStore.getState().account ? (
                 <OrdersCard className="mb-3 mb-lg-0" />
               ) : (
                 <WelcomeCard className="mb-3 mb-lg-0" />
