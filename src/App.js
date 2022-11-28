@@ -9,11 +9,13 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { connectionStore, disconnected } from './redux/connectionStore';
-import { createAlchemyProvider, createOrdersContract } from './utils/ethersFactory';
+import { createNodeProvider, createOrdersContract } from './utils/ethersFactory';
 
 import coinSymbols from './coin-symbols.json';
 import ordersContractAbi from './orders-smart-contract-abi.json';
 import erc20ContractAbi from './erc20-contract-abi.json';
+import { networkNames, nodeProviderPublicApiKeys } from './utils/networkMap';
+import { mapMetamaskErrorToMessage } from './utils/alertMap';
 import { ethers } from 'ethers';
 import detectEthereumProvider from '@metamask/detect-provider';
 
@@ -25,12 +27,11 @@ import OrdersCard from './components/OrdersCard';
 import NewOrderCard from './components/NewOrderCard';
 import PlainTextLoginModal from './components/PlainTextLoginModal';
 import { alertStore } from './redux/alertStore';
-import { ordersStore } from './redux/ordersStore';
+import { ordersStore, checked } from './redux/ordersStore';
 
 const ordersContractAddress = process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS;
-const blockExplorerTransactionUrl = process.env.REACT_APP_BLOCK_EXPLORER_TRANSACTION_URL;
-const providerAlchemyPublicApiKey = process.env.REACT_APP_PROVIDER_ALCHEMY_PUBLIC_API_KEY;
-const providerAlchemyNetworkName = process.env.REACT_APP_PROVIDER_ALCHEMY_NETWORK_NAME;
+const providerPublicApiKey = nodeProviderPublicApiKeys[process.env.REACT_APP_NETWORK_ID];
+const providerNetworkName = networkNames[process.env.REACT_APP_NETWORK_ID];
 
 class App extends React.Component {
   constructor() {
@@ -43,20 +44,6 @@ class App extends React.Component {
       isConnected: false,
       showManualLoginModal: false
     };
-
-    this.orderDirectionMap = {
-      0: '<',
-      1: '=',
-      2: '>'
-    };
-
-    this.orderStatusMap = {
-      0: 'Untriggered',
-      1: 'Executed',
-      2: 'Cancelled'
-    };
-
-    this.decimalsMap = {};
   }
 
   async componentDidMount() {
@@ -104,7 +91,7 @@ class App extends React.Component {
       accounts = await providerMetamask.send('eth_requestAccounts', []);
     } catch (err) {
       console.log(err);
-      this.showAlert('secondary', 7, this.mapMetamaskErrorToMessage(err.code), 'If you prefer, you can also connect by "pasting" a wallet address into a textbox.');
+      this.showAlert('secondary', 7, mapMetamaskErrorToMessage(err.code), 'If you prefer, you can also connect by "pasting" a wallet address into a textbox.');
       return;
     }
 
@@ -134,92 +121,9 @@ class App extends React.Component {
     }));
   };
 
-  createAlchemyProvider = () => createAlchemyProvider(providerAlchemyNetworkName, providerAlchemyPublicApiKey);
+  createNodeProvider = () => createNodeProvider(providerNetworkName, providerPublicApiKey);
 
   createOrdersContract = providerOrSigner => createOrdersContract(ordersContractAddress, ordersContractAbi, providerOrSigner);
-
-  handleOrderAction = async (orderId, actionType) => {
-    switch (actionType) {
-      case 'cancel':
-        await this.cancelOrder(orderId);
-        break;
-      default:
-        console.warn(`Unhandled action type: ${actionType}`);
-        break;
-    }
-
-    const lastCheckedTimestamp = Math.floor(new Date() / 1000);
-    ordersStore.dispatch(checked({ lastCheckedTimestamp }));
-  };
-
-  convertTokenAmountToBalance = async (symbol, balance) => {
-    const decimals = await this.getCachedTokenDecimals(symbol);
-    const balanceBig = new Big(`${balance}e-${decimals}`);
-    return balanceBig.toString();
-  };
-
-  getCachedTokenDecimals = async symbol => {
-    if (this.decimalsMap[symbol]) {
-      return this.decimalsMap[symbol];
-    }
-
-    const contract = this.createOrdersContract(this.createAlchemyProvider());
-    const tokenAddresses = await contract.functions.tryGetTokenAddress(symbol);
-    const tokenAddress = tokenAddresses[0];
-    const tokenContract = new ethers.Contract(tokenAddress, erc20ContractAbi, this.createAlchemyProvider());
-    const decimals = tokenContract.functions.decimals();
-    this.decimalsMap[symbol] = decimals;
-    return decimals;
-  };
-
-  cancelOrder = async (orderId) => {
-    const providerMetamask = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = providerMetamask.getSigner();
-    const contract = this.createOrdersContract(signer);
-
-    this.showAlert('primary', 1, 'Please confirm the transaction in metamask.', 'This will be 1 transaction that returns 100% of your order\'s coins back to your wallet.');
-    let tx;
-    try {
-      tx = await contract.functions.cancelOrder(orderId);
-    } catch (err) {
-      console.log(err);
-      const msg = this.mapMetamaskErrorToMessage(err.code);
-      this.showAlert('secondary', 1, msg, null);
-      return;
-    }
-
-    this.showAlert('info', 1, `Cancelling your order now, beep boop...`, 'This transaction is refunding 100% of your order\'s coins back to your wallet.');
-    try {
-      const txReceipt = await tx.wait();
-      if (txReceipt.status === 0) {
-        throw txReceipt;
-      }
-
-      const event = txReceipt.events.find(e => e.event === 'OrderCancelled');
-      const tokenInAmount = parseInt(event.args.tokenInAmount._hex, 16);
-      const refundBalance = await this.convertTokenAmountToBalance(event.args.tokenIn, tokenInAmount);
-      const refundDetails = `Refunded ${refundBalance} ${event.args.tokenIn} to "${event.args.owner}"`;
-      const txUrl = `${blockExplorerTransactionUrl}/${txReceipt.transactionHash}`;
-      this.showAlert('success', 1, refundDetails, txUrl);
-    } catch (err) {
-      console.log(err);
-      const msg = this.mapMetamaskErrorToMessage(err.reason);
-      this.showAlert('warning', 1, msg, null);
-    }
-  };
-
-  mapMetamaskErrorToMessage = errorReasonOrCode => {
-    switch (errorReasonOrCode) {
-      case 'user rejected transaction':
-      case 'ACTION_REJECTED':
-        return 'Transaction was cancelled';
-      case -32002:
-        return 'Please unlock Metamask to continue.';
-      default:
-        console.warn(`Unsuccessfully mapped metamask error to message: ${errorReasonOrCode}`);
-        return `We're sorry, something went wrong`;
-    }
-  };
 
   showAlert = (alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary) => this.setState({ alertVariant, alertCode, alertMsgPrimary, alertMsgSecondary });
 
@@ -237,7 +141,7 @@ class App extends React.Component {
           <Row>
             <Col xs={12} lg={8}>
               {connectionStore.getState().networkId ? (
-                <OrdersCard orders={this.state.orders} handleOrderAction={this.handleOrderAction} account={connectionStore.getState().account} className="mb-3 mb-lg-0" />
+                <OrdersCard className="mb-3 mb-lg-0" />
               ) : (
                 <WelcomeCard className="mb-3 mb-lg-0" />
               )}

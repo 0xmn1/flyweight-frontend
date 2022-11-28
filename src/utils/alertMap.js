@@ -45,3 +45,16 @@ export const emptyAlert = {
     msgPrimary: null,
     msgSecondary: null
 };
+
+export const mapMetamaskErrorToMessage = errorReasonOrCode => {
+    switch (errorReasonOrCode) {
+        case 'user rejected transaction':
+        case 'ACTION_REJECTED':
+        return 'Transaction was cancelled';
+    case -32002:
+        return 'Please unlock Metamask to continue.';
+    default:
+        console.warn(`Unsuccessfully mapped metamask error to message: ${errorReasonOrCode}`);
+        return `We're sorry, something went wrong`;
+    }
+};

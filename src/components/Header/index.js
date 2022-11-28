@@ -27,7 +27,7 @@ const Header = props => (
 
       {props.isConnected ? (
         <Button variant="primary" type="button" onClick={() => connectionStore.dispatch(disconnected())}>
-          Disconnect from ethereum
+          Disconnect
         </Button>
       ) : (
         <>

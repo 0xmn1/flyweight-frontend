@@ -4,6 +4,7 @@ import { createOrdersContract } from './ethersFactory';
 import ordersContractAbi from '../orders-smart-contract-abi.json';
 import erc20ContractAbi from '../erc20-contract-abi.json';
 import { alertStore, alertSet } from '../redux/alertStore';
+import { mapMetamaskErrorToMessage } from '../utils/alertMap';
 
 const setAlert = (variant, code, msgPrimary, msgSecondary) => {
     const alert = { variant, code, msgPrimary, msgSecondary };
@@ -52,7 +53,7 @@ export const addOrder = async (signer, order) => {
         setAlert('success', 6, 'Neat! Your order is now live, and will be triggered when your conditions are met.', 'This is a decentralized protocol: users can refund coin deposits at any time, yay. Goodluck in the casino comrade (you may now close this box/browser tab)');
     } catch (err) {
         console.log(err);
-        const msg = this.mapMetamaskErrorToMessage(err.reason);
+        const msg = mapMetamaskErrorToMessage(err.reason);
         setAlert('secondary', 1, msg, null);
     }
 };

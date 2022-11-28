@@ -5,9 +5,10 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Form from 'react-bootstrap/Form';
 import Stack from 'react-bootstrap/Stack';
-import { createMetamaskProvider, createAlchemyProvider, createOrdersContract } from '../../utils/ethersFactory';
+import { createMetamaskProvider, createNodeProvider, createOrdersContract } from '../../utils/ethersFactory';
 import { addOrder } from '../../utils/ordersContractFactory';
-import { alertCodes } from '../../utils/alertMap';
+import { alertCodes, mapMetamaskErrorToMessage } from '../../utils/alertMap';
+import { networkNames, nodeProviderPublicApiKeys } from '../../utils/networkMap';
 import { alertStore, alertSet } from '../../redux/alertStore';
 import { ordersStore, checked } from '../../redux/ordersStore';
 import ordersContractAbi from '../../orders-smart-contract-abi.json';
@@ -38,7 +39,9 @@ export default class NewOrderCard extends React.Component {
     }
 
     getWhitelistedCoinSymbols = async () => {
-        const provider = createAlchemyProvider(process.env.REACT_APP_PROVIDER_ALCHEMY_NETWORK_NAME, process.env.REACT_APP_PROVIDER_ALCHEMY_PUBLIC_API_KEY);
+        const providerNetworkName = networkNames[process.env.REACT_APP_NETWORK_ID];
+        const providerApiKey = nodeProviderPublicApiKeys[process.env.REACT_APP_NETWORK_ID];
+        const provider = createNodeProvider(providerNetworkName, providerApiKey);
         const contract = createOrdersContract(process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS, ordersContractAbi, provider);
         const res = await contract.functions.getWhitelistedSymbols(coinSymbols);
         return res[0];
@@ -69,7 +72,7 @@ export default class NewOrderCard extends React.Component {
                     accounts = await provider.send('eth_requestAccounts', []);
                 } catch (err) {
                     console.log(err);
-                    this.setAlert('primary', alertCodes.HOW_ORDERS_ADDED, this.mapMetamaskErrorToMessage(err.code));
+                    this.setAlert('primary', alertCodes.HOW_ORDERS_ADDED, mapMetamaskErrorToMessage(err.code));
                 }
             }
     

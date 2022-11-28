@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-export const createAlchemyProvider = (networkName, apiKey) =>
+export const createNodeProvider = (networkName, apiKey) =>
     new ethers.providers.AlchemyProvider(networkName, apiKey);
 
 export const createMetamaskProvider = window =>
