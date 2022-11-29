@@ -168,13 +168,7 @@ export default class OrdersCard extends React.Component {
     const providerMetamask = new ethers.providers.Web3Provider(window.ethereum);
     const signer = providerMetamask.getSigner();
     const contract = this.createOrdersContract(signer);
-
-    this.dispatchAlertSet(this.createAlertSetPayload(
-      'primary',
-      1,
-      literals.CONFIRM_METAMASK_TX,
-      literals.CANCEL_CONFIRM,
-    ));
+    this.dispatchAlertSet(this.createAlertSetPayload('primary', 1, literals.CONFIRM_METAMASK_TX, literals.CANCEL_CONFIRM));
 
     let tx;
     try {
@@ -183,23 +177,11 @@ export default class OrdersCard extends React.Component {
       console.log(err);
       const msg = mapMetamaskErrorToMessage(err.code);
 
-      this.dispatchAlertSet(this.createAlertSetPayload(
-        'secondary',
-        1,
-        msg,
-        null
-      ));
-
+      this.dispatchAlertSet(this.createAlertSetPayload('secondary', 1, msg, null));
       return;
     }
 
-    this.dispatchAlertSet(this.createAlertSetPayload(
-      'info',
-      1,
-      literals.CANCEL_PROCESSING,
-      literals.CANCEL_REFUND,
-    ));
-
+    this.dispatchAlertSet(this.createAlertSetPayload('info', 1, literals.CANCEL_PROCESSING, literals.CANCEL_REFUND));
     try {
       const txReceipt = await tx.wait();
       if (txReceipt.status === 0) {
@@ -210,27 +192,14 @@ export default class OrdersCard extends React.Component {
       const tokenInAmount = parseInt(event.args.tokenInAmount._hex, 16);
       const refundBalance = await this.convertTokenAmountToBalance(contract, event.args.tokenIn, tokenInAmount);
       const refundDetails = `Refunded ${refundBalance} ${event.args.tokenIn} to "${event.args.owner}"`;
-
-      // chkpt
       const blockExplorerTransactionUrl = blockExplorerUrls[connectionStore.getState().networkId];
       const txUrl = `${blockExplorerTransactionUrl}/${txReceipt.transactionHash}`;
 
-      this.dispatchAlertSet(this.createAlertSetPayload(
-        'success',
-        1,
-        refundDetails,
-        txUrl
-      ));
+      this.dispatchAlertSet(this.createAlertSetPayload('success', 1, refundDetails, txUrl));
     } catch (err) {
       console.log(err);
       const msg = mapMetamaskErrorToMessage(err.reason);
-
-      this.dispatchAlertSet(this.createAlertSetPayload(
-        'warning',
-        1,
-        msg,
-        null
-      ));
+      this.dispatchAlertSet(this.createAlertSetPayload('warning', 1, msg, null));
     }
   };
 

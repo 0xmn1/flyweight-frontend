@@ -26,60 +26,30 @@ export const addOrder = async (signer, order) => {
   const tokenInAmountStr = tokenInAmount.toString();
 
   try {
-    setAlert(
-      'primary',
-      2,
-      literals.CONFIRM_METAMASK_TX_STEP_1,
-      literals.CONFIRM_METAMASK_TX_STEP_EXPLANATION,
-    );
-
+    setAlert('primary', 2, literals.CONFIRM_METAMASK_TX_STEP_1, literals.CONFIRM_METAMASK_TX_STEP_EXPLANATION);
     const txNewOrder = await contract.functions.addNewOrder(
-      order.tokenInSymbol,
-      order.tokenOutSymbol,
-      order.triggerPrice,
-      order.triggerDirection,
-      tokenInAmountStr,
+        order.tokenInSymbol,
+        order.tokenOutSymbol,
+        order.triggerPrice,
+        order.triggerDirection,
+        tokenInAmountStr,
     );
 
-    setAlert(
-      'info',
-      3,
-      literals.TX_PROCESSING_1,
-      literals.APPROVAL_T,
-    );
-
+    setAlert('info', 3, literals.TX_PROCESSING_1, literals.APPROVAL_T);
     const txNewOrderReceipt = await txNewOrder.wait();
     if (txNewOrderReceipt.status === 0) {
       throw txNewOrderReceipt;
     }
 
-    setAlert(
-      'primary',
-      4,
-      literals.CONFIRM_METAMASK_TX_STEP_2,
-      literals.CONFIRM_METAMASK_TX_STEP_2_EXPLANATION,
-    );
-
+    setAlert('primary', 4, literals.CONFIRM_METAMASK_TX_STEP_2, literals.CONFIRM_METAMASK_TX_STEP_2_EXPLANATION);
     const txDeposit = await tokenInContract.transfer(contract.address, tokenInAmountStr);
-
-    setAlert(
-      'info',
-      5,
-      literals.FINALIZING,
-      literals.TX_PROCESSING_2,
-    );
-
+    setAlert('info', 5, literals.FINALIZING, literals.TX_PROCESSING_2);
     const txDepositReceipt = await txDeposit.wait();
     if (txDepositReceipt.status === 0) {
       throw txDepositReceipt;
     }
 
-    setAlert(
-      'success',
-      6,
-      literals.ORDER_LIVE,
-      literals.DEX,
-    );
+    setAlert('success', 6, literals.ORDER_LIVE, literals.DEX);
   } catch (err) {
     console.log(err);
     const msg = mapMetamaskErrorToMessage(err.reason);
