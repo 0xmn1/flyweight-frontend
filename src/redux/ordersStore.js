@@ -1,4 +1,4 @@
-import {createSlice, configureStore} from '@reduxjs/toolkit';
+import { createSlice, configureStore } from '@reduxjs/toolkit';
 
 const slice = createSlice({
   name: 'ordersStore',
@@ -16,5 +16,5 @@ const ordersStore = configureStore({
   reducer: slice.reducer,
 });
 
-const {checked} = slice.actions;
-export {ordersStore, checked};
+const { checked } = slice.actions;
+export { ordersStore, checked };

@@ -1,4 +1,4 @@
-import {ethers} from 'ethers';
+import { ethers } from 'ethers';
 
 export const createNodeProvider = (networkName, apiKey) =>
   new ethers.providers.AlchemyProvider(networkName, apiKey);

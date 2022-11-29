@@ -1,4 +1,4 @@
-import {createSlice, configureStore} from '@reduxjs/toolkit';
+import { createSlice, configureStore } from '@reduxjs/toolkit';
 
 const initialState = {
   variant: null,
@@ -12,7 +12,7 @@ const slice = createSlice({
   initialState,
   reducers: {
     alertSet: (state, action) => {
-      const {variant, code, msgPrimary, msgSecondary} = action.payload;
+      const { variant, code, msgPrimary, msgSecondary } = action.payload;
       state.variant = variant;
       state.code = code;
       state.msgPrimary = msgPrimary;
@@ -26,5 +26,5 @@ const alertStore = configureStore({
   reducer: slice.reducer,
 });
 
-const {alertSet, alertClear} = slice.actions;
-export {alertStore, alertSet, alertClear};
+const { alertSet, alertClear } = slice.actions;
+export { alertStore, alertSet, alertClear };

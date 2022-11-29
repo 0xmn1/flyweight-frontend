@@ -29,7 +29,7 @@ import { ordersStore, checked } from './redux/ordersStore';
 import literals from './utils/resources/literals/english.json';
 
 const networkId = connectionStore.getState().networkId;
-const ordersContractAddress =  orderContractAddresses[connectionStore.getState().networkId];
+const ordersContractAddress = orderContractAddresses[connectionStore.getState().networkId];
 const providerPublicApiKey = nodeProviderPublicApiKeys[networkId];
 const providerNetworkName = networkNames[networkId];
 
@@ -66,7 +66,7 @@ class App extends React.Component {
           connectionStore.dispatch(disconnected());
         }
       });
-      
+
       window.ethereum.on('chainChanged', networkId => {
         const account = connectionStore.getState().account;
         connectionStore.dispatch(connected({ networkId, account }));
@@ -147,12 +147,12 @@ class App extends React.Component {
               )}
             </Col>
             <Col xs={12} lg={4}>
-                <NewOrderCard isMetamaskProviderDetected={this.state.isMetamaskProviderDetected} />
+              <NewOrderCard isMetamaskProviderDetected={this.state.isMetamaskProviderDetected} />
             </Col>
           </Row>
         </Container>
         <PlainTextLoginModal show={this.state.showManualLoginModal} onHide={this.toggleManualLoginModal} />
-      </> 
+      </>
     );
   }
 }

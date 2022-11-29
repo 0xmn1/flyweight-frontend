@@ -8,7 +8,7 @@ import styles from './Header.module.scss';
 import { connectionStore, disconnected } from '../../redux/connectionStore';
 
 const Header = props => (
-    <Navbar bg="light" expand="lg" className="mb-3" id={styles.wrapper}>
+  <Navbar bg="light" expand="lg" className="mb-3" id={styles.wrapper}>
     <Container>
       <Navbar.Brand>
         <Stack direction="vertical" gap={0}>

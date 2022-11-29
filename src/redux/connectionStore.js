@@ -1,4 +1,4 @@
-import {createSlice, configureStore} from '@reduxjs/toolkit';
+import { createSlice, configureStore } from '@reduxjs/toolkit';
 
 const initialState = {
   networkId: process.env.REACT_APP_NETWORK_ID,
@@ -21,5 +21,5 @@ const connectionStore = configureStore({
   reducer: slice.reducer,
 });
 
-const {connected, disconnected} = slice.actions;
-export {connectionStore, connected, disconnected};
+const { connected, disconnected } = slice.actions;
+export { connectionStore, connected, disconnected };
