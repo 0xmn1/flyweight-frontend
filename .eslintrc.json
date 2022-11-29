@@ -1,5 +1,18 @@
 {
+    "extends": "google",
+    "parserOptions": {
+        "sourceType": "module",
+        "ecmaVersion": 2022
+    },
     "globals": {
         "BigInt": true
+    },
+    "rules": {
+        "max-len": [
+            "error",
+            {
+                "code": 120
+            }
+        ]
     }
 }

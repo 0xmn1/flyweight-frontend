@@ -1,20 +1,20 @@
-import { createSlice, configureStore } from '@reduxjs/toolkit';
+import {createSlice, configureStore} from '@reduxjs/toolkit';
 
 const slice = createSlice({
-    name: 'ordersStore',
-    initialState: {
-        lastCheckedTimestamp: null
+  name: 'ordersStore',
+  initialState: {
+    lastCheckedTimestamp: null,
+  },
+  reducers: {
+    checked: (state, action) => {
+      state.lastCheckedTimestamp = action.payload.lastCheckedTimestamp;
     },
-    reducers: {
-        checked: (state, action) => {
-            state.lastCheckedTimestamp = action.payload.lastCheckedTimestamp;
-        }
-    }
+  },
 });
 
 const ordersStore = configureStore({
-    reducer: slice.reducer
+  reducer: slice.reducer,
 });
 
-const { checked } = slice.actions;
-export { ordersStore, checked };
+const {checked} = slice.actions;
+export {ordersStore, checked};

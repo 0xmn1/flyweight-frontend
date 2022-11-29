@@ -1,20 +1,20 @@
 export const networkNames = {
-    '0x1': 'mainnet',
-    '0x5': 'goerli'
+  '0x1': 'mainnet',
+  '0x5': 'goerli',
 };
 
 export const nodeProviderPublicApiKeys = {
-    '0x1': process.env.REACT_APP_PROVIDER_ALCHEMY_PUBLIC_API_KEY_MAINNET,
-    '0x5': process.env.REACT_APP_PROVIDER_ALCHEMY_PUBLIC_API_KEY_GOERLI
+  '0x1': process.env.REACT_APP_PROVIDER_ALCHEMY_PUBLIC_API_KEY_MAINNET,
+  '0x5': process.env.REACT_APP_PROVIDER_ALCHEMY_PUBLIC_API_KEY_GOERLI,
 };
 
 export const blockExplorerUrls = {
-    '0x1': process.env.REACT_APP_BLOCK_EXPLORER_TRANSACTION_URL_MAINNET,
-    '0x5': process.env.REACT_APP_BLOCK_EXPLORER_TRANSACTION_URL_GOERLI
+  '0x1': process.env.REACT_APP_BLOCK_EXPLORER_TRANSACTION_URL_MAINNET,
+  '0x5': process.env.REACT_APP_BLOCK_EXPLORER_TRANSACTION_URL_GOERLI,
 };
 
 export const orderContractAddresses = {
-    '0x1': process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS_MAINNET,
-    '0x5': process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS_GOERLI
-}; 
+  '0x1': process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS_MAINNET,
+  '0x5': process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS_GOERLI,
+};
 

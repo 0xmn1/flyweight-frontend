@@ -13,8 +13,8 @@ import { networkNames, nodeProviderPublicApiKeys } from '../../utils/networkMap'
 import { alertStore, alertSet, alertClear } from '../../redux/alertStore';
 import { connectionStore } from '../../redux/connectionStore';
 import { ordersStore, checked } from '../../redux/ordersStore';
-import ordersContractAbi from '../../orders-smart-contract-abi.json';
-import coinSymbols from '../../coin-symbols.json';
+import ordersContractAbi from '../../utils/resources/abi-orders-smart-contract.json';
+import coinSymbols from '../../utils/resources/coin-symbols.json';
 
 export default class NewOrderCard extends React.Component {
     constructor() {

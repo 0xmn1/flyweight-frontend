@@ -15,8 +15,9 @@ import { createOrdersContract } from '../../utils/ethersFactory';
 import { createNodeProvider } from '../../utils/ethersFactory';
 import { mapMetamaskErrorToMessage } from '../../utils/alertMap';
 import { blockExplorerUrls, orderContractAddresses, networkNames, nodeProviderPublicApiKeys } from '../../utils/networkMap';
-import erc20ContractAbi from '../../erc20-contract-abi.json';
-import ordersContractAbi from '../../orders-smart-contract-abi.json';
+import erc20ContractAbi from '../../utils/resources/abi-erc20-contract.json';
+import ordersContractAbi from '../../utils/resources/abi-orders-smart-contract.json';
+import literals from '../../utils/resources/literals/english.json';
 
 export default class OrdersCard extends React.Component {
     constructor() {
@@ -171,8 +172,8 @@ export default class OrdersCard extends React.Component {
         this.dispatchAlertSet(this.createAlertSetPayload(
             'primary',
             1,
-            'Please confirm the transaction in metamask.',
-            'This will be 1 transaction that returns 100% of your order\'s coins back to your wallet.'
+            literals.CONFIRM_METAMASK_TX,
+            literals.CANCEL_CONFIRM,
         ));
 
         let tx;
@@ -195,8 +196,8 @@ export default class OrdersCard extends React.Component {
         this.dispatchAlertSet(this.createAlertSetPayload(
             'info', 
             1,
-            `Cancelling your order now, beep boop...`,
-            'This transaction is refunding 100% of your order\'s coins back to your wallet.'
+            literals.CANCEL_PROCESSING,
+            literals.CANCEL_REFUND,
         ));
 
         try {

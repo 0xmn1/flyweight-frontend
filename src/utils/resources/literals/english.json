@@ -1,0 +1,17 @@
+{
+	"CONNECT_READ_ONLY": "If you prefer, you can also connect by \"pasting\" a wallet address into a textbox.",
+	"CONFIRM_METAMASK_TX": "Please confirm the transaction in metamask.",
+	"CANCEL_CONFIRM": "This will be 1 transaction that returns 100% of your order's coins back to your wallet.",
+	"CANCEL_PROCESSING": "Cancelling your order now, beep boop...",
+	"CANCEL_REFUND": "This transaction is refunding 100% of your order's coins back to your wallet.",
+	"CONFIRM_METAMASK_TX_STEP_1": "Please confirm transaction [1] of [2] in metamask.",
+	"CONFIRM_METAMASK_TX_STEP_EXPLANATION": "This will add your order to the ethereum smart contract. This transaction creates data and does not transfer any coins yet.",
+	"CONFIRM_METAMASK_TX_STEP_2": "Please confirm transaction [2] of [2] in metamask.",
+	"CONFIRM_METAMASK_TX_STEP_2_EXPLANATION": "This allows you to deposit the coins for your order to automatically swap via uniswap. Users can cancel untriggered orders at any time to get their coins sent back",
+	"APPROVAL_T": "Awaiting network approval (ethereum blocks take ~15 secs, unless there is degen monkey nft minting going on, or something worse than monkeys..)",
+	"TX_PROCESSING_1": "Processing transaction, beep boop...",
+	"FINALIZING": "Finalizing your order now, boop beep...",
+	"TX_PROCESSING_2": "Awaiting network approval. Remember the bull market days when gas was 2000+ gwei? Wen zk sync token",
+	"ORDER_LIVE": "Neat! Your order is now live, and will be triggered when your conditions are met.",
+	"DEX": "This is a decentralized protocol: users can refund coin deposits at any time, yay. Goodluck in the casino comrade (you may now close this box/browser tab)"
+}

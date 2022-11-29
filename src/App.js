@@ -11,9 +11,6 @@ import Col from 'react-bootstrap/Col';
 import { connectionStore, disconnected } from './redux/connectionStore';
 import { createNodeProvider, createOrdersContract } from './utils/ethersFactory';
 
-import coinSymbols from './coin-symbols.json';
-import ordersContractAbi from './orders-smart-contract-abi.json';
-import erc20ContractAbi from './erc20-contract-abi.json';
 import { networkNames, nodeProviderPublicApiKeys, orderContractAddresses } from './utils/networkMap';
 import { mapMetamaskErrorToMessage } from './utils/alertMap';
 import { ethers } from 'ethers';
@@ -28,6 +25,8 @@ import NewOrderCard from './components/NewOrderCard';
 import PlainTextLoginModal from './components/PlainTextLoginModal';
 import { alertStore, alertSet } from './redux/alertStore';
 import { ordersStore, checked } from './redux/ordersStore';
+
+import literals from './utils/resources/literals/english.json';
 
 const networkId = connectionStore.getState().networkId;
 const ordersContractAddress =  orderContractAddresses[connectionStore.getState().networkId];
@@ -96,7 +95,7 @@ class App extends React.Component {
         variant: 'secondary',
         code: 7,
         msgPrimary: mapMetamaskErrorToMessage(err.code),
-        msgSecondary: 'If you prefer, you can also connect by "pasting" a wallet address into a textbox.'
+        msgSecondary: literals.CONNECT_READ_ONLY,
       }));
 
       return;
@@ -152,7 +151,7 @@ class App extends React.Component {
             </Col>
           </Row>
         </Container>
-        <PlainTextLoginModal show={this.state.showManualLoginModal} onHide={this.toggleManualLoginModal} defaultValue={connectionStore.getState().manualLoginAddress} />
+        <PlainTextLoginModal show={this.state.showManualLoginModal} onHide={this.toggleManualLoginModal} />
       </> 
     );
   }
