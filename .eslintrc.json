@@ -1,5 +1,19 @@
 {
-    "globals": {
-        "BigInt": true
-    }
+  "extends": "google",
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2022
+  },
+  "globals": {
+    "BigInt": true
+  },
+  "rules": {
+    "object-curly-spacing": "off",
+    "max-len": [
+      "error",
+      {
+        "code": 120
+      }
+    ]
+  }
 }
