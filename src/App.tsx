@@ -123,9 +123,10 @@ class App extends React.Component<Props, State> {
   };
 
   render() {
+    const isConnectedToTestnet = !!(connectionStore.getState().account && connectionStore.getState().networkId !== '0x1');
     return (
       <>
-        <Banner show={connectionStore.getState().networkId === '0x5'} />
+        <Banner show={isConnectedToTestnet} />
         <Header isConnected={this.state.isConnected}
           isMetamaskProviderDetected={this.state.isMetamaskProviderDetected}
           toggleManualLoginModal={this.toggleManualLoginModal}
