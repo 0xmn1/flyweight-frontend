@@ -6,7 +6,7 @@ type Props = {
 };
 
 const Ping = (props: Props) => (
-  <div className={props.show ? styles.wrapper : null}></div>
+  <div className={props.show ? styles.wrapper : undefined}></div>
 );
 
 export default Ping;

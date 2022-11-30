@@ -204,7 +204,7 @@ export default class OrdersCard extends React.Component<Props, State> {
     }
 
     const event: Event | undefined = txReceipt.events.find((e: Event) => e.event === 'OrderCancelled');
-    if (!event?.args) {
+    if (!event || !event.args) {
       throw 'OrderCancelled event not found';
     }
 

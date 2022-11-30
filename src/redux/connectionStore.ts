@@ -1,5 +1,7 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 
+import { networkNames } from '../utils/networkMap';
+
 type ConnectionStoreState = {
   networkId: string,
   account: string | null,
