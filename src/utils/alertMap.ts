@@ -1,4 +1,15 @@
-export const alertCodes = {
+interface AlertCodes {
+  [key: string]: number
+}
+
+interface AlertCodeMap {
+  [key: string]: {
+    label: string,
+    href: string
+  }
+}
+
+export const alertCodes: AlertCodes = {
   FAQ: 1,
   WHAT_IS_ETH_TX: 2,
   HOW_ORDERS_ADDED: 3,
@@ -8,7 +19,7 @@ export const alertCodes = {
   HOW_BLOCKCHAIN_READ: 7,
 };
 
-export const alertCodeMap = {
+export const alertCodeMap: AlertCodeMap = {
   [alertCodes.FAQ]: {
     label: 'Frequently asked questions',
     href: '',
@@ -39,7 +50,7 @@ export const alertCodeMap = {
   },
 };
 
-export const mapMetamaskErrorToMessage = (errorReasonOrCode) => {
+export const mapMetamaskErrorToMessage = (errorReasonOrCode: string | number) => {
   switch (errorReasonOrCode) {
     case 'user rejected transaction':
     case 'ACTION_REJECTED':

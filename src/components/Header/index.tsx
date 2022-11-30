@@ -1,13 +1,21 @@
-import React from 'react';
-import Navbar from 'react-bootstrap/Navbar';
-import Nav from 'react-bootstrap/Nav';
-import Container from 'react-bootstrap/Container';
-import Stack from 'react-bootstrap/Stack';
-import Button from 'react-bootstrap/Button';
-import styles from './Header.module.scss';
 import { connectionStore, disconnected } from '../../redux/connectionStore';
 
-const Header = props => (
+import Button from 'react-bootstrap/Button';
+import Container from 'react-bootstrap/Container';
+import Nav from 'react-bootstrap/Nav';
+import Navbar from 'react-bootstrap/Navbar';
+import React from 'react';
+import Stack from 'react-bootstrap/Stack';
+import styles from './Header.module.scss';
+
+type Props = {
+  isConnected: boolean,
+  toggleManualLoginModal: () => void,
+  isMetamaskProviderDetected: boolean,
+  metamaskLogin: () => void,
+};
+
+const Header = (props: Props) => (
   <Navbar bg="light" expand="lg" className="mb-3" id={styles.wrapper}>
     <Container>
       <Navbar.Brand>

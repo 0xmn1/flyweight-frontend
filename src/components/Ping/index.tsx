@@ -1,7 +1,11 @@
 import React from 'react';
 import styles from './Ping.module.scss';
 
-const Ping = props => (
+type Props = {
+  show: boolean,
+};
+
+const Ping = (props: Props) => (
   <div className={props.show ? styles.wrapper : null}></div>
 );
 

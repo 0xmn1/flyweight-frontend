@@ -1,5 +1,5 @@
-import React from 'react';
 import { ArrowClockwise } from 'react-bootstrap-icons';
+import React from 'react';
 import styles from './Loading.module.scss';
 
 const Loading = () => (

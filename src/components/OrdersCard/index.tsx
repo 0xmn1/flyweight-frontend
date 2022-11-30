@@ -1,27 +1,42 @@
-import React from 'react';
-import watch from 'redux-watch';
-import Big from 'big.js';
+import { AlertPayload, alertSet, alertStore } from '../../redux/alertStore';
+import { Contract, ContractReceipt, ContractTransaction, Event, Signer, ethers, providers } from 'ethers';
+import { Order, OrderResponse, OrderResponseDto } from '../../utils/ordersContractFactory';
+import { blockExplorerUrls, networkNames, nodeProviderPublicApiKeys, orderContractAddresses } from '../../utils/networkMap';
+import { checked, ordersStore } from '../../redux/ordersStore';
+
 import Badge from 'react-bootstrap/Badge';
+import Big from 'big.js';
 import Card from 'react-bootstrap/Card';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
-import Table from 'react-bootstrap/Table';
 import Loading from '../Loading';
-import { ethers } from 'ethers';
+import React from 'react';
+import Table from 'react-bootstrap/Table';
 import { connectionStore } from '../../redux/connectionStore';
-import { ordersStore, checked } from '../../redux/ordersStore';
-import { alertStore, alertSet } from '../../redux/alertStore';
-import { createOrdersContract } from '../../utils/ethersFactory';
 import { createNodeProvider } from '../../utils/ethersFactory';
-import { mapMetamaskErrorToMessage } from '../../utils/alertMap';
-import { blockExplorerUrls, orderContractAddresses, networkNames, nodeProviderPublicApiKeys } from '../../utils/networkMap';
+import { createOrdersContract } from '../../utils/ethersFactory';
 import erc20ContractAbi from '../../utils/resources/abi-erc20-contract.json';
-import ordersContractAbi from '../../utils/resources/abi-orders-smart-contract.json';
 import literals from '../../utils/resources/literals/english.json';
+import { mapMetamaskErrorToMessage } from '../../utils/alertMap';
+import ordersContractAbi from '../../utils/resources/abi-orders-smart-contract.json';
+import { tryMetamaskOpAsync } from '../../utils/providerAdapter';
+import watch from 'redux-watch';
 
-export default class OrdersCard extends React.Component {
-  constructor() {
-    super();
+type Props = {
+  className: string,
+};
+
+type State = {
+  orders: Array<OrderResponse> | null,
+};
+
+export default class OrdersCard extends React.Component<Props, State> {
+  private orderDirectionMap: { [key: number]: string };
+  private orderStatusMap: { [key: number]: string };
+  private decimalsMap: { [key: string]: number };
+
+  constructor(props: Props) {
+    super(props);
     this.state = {
       orders: null
     };
@@ -67,12 +82,12 @@ export default class OrdersCard extends React.Component {
     return createNodeProvider(providerNetworkName, providerApiKey);
   };
 
-  createOrdersContract = providerOrSigner => {
+  createOrdersContract = (providerOrSigner: providers.Provider | Signer) => {
     const address = orderContractAddresses[connectionStore.getState().networkId];
     return createOrdersContract(address, ordersContractAbi, providerOrSigner);
   };
 
-  setUserOrderDashboard = async (account) => {
+  setUserOrderDashboard = async (account: string | null) => {
     this.setState({ orders: null });
 
     if (!account) {
@@ -85,8 +100,8 @@ export default class OrdersCard extends React.Component {
     const txResponse = await contract.functions.getOrdersByAddress(account);
     const ordersResponse = txResponse[0];
 
-    const decimalsMap = {};
-    const symbols = ordersResponse.reduce((set, order) => set.add(order.tokenIn), new Set());
+    const decimalsMap: { [key: string]: number } = {};
+    const symbols = ordersResponse.reduce((set: Set<string>, order: Order) => set.add(order.tokenInSymbol), new Set());
     for (let symbol of symbols) {
       const isCached = decimalsMap.hasOwnProperty(symbol);
       if (!isCached) {
@@ -98,7 +113,7 @@ export default class OrdersCard extends React.Component {
       }
     }
 
-    const orders = ordersResponse.map(o => {
+    const orders = ordersResponse.map((o: OrderResponseDto) => {
       const orderId = parseInt(o.id._hex, 16);
       const ownerTail = o.owner.substring(o.owner.length - 4, o.owner.length);
       const tokenInAmountInt = parseInt(o.tokenInAmount._hex, 16);
@@ -106,23 +121,22 @@ export default class OrdersCard extends React.Component {
       const tokenInAmountIntBig = new Big(`${tokenInAmountInt}e-${tokenInDecimals}`);
       const anonOrderId = `${ownerTail}${orderId}`;
 
-      return {
-        orderId: orderId,
-        anonOrderId: anonOrderId,
-        tokenInAmount: tokenInAmountIntBig.toString(),
-        tokenIn: o.tokenIn,
-        tokenOut: o.tokenOut,
-        direction: this.orderDirectionMap[o.direction],
-        tokenInTriggerPrice: o.tokenInTriggerPrice,
-        orderState: this.orderStatusMap[o.orderState],
-        lastChecked: null
-      };
+      return new OrderResponse(
+        orderId,
+        anonOrderId,
+        tokenInAmountIntBig.toString(),
+        o.tokenIn,
+        o.tokenOut,
+        this.orderDirectionMap[o.direction],
+        o.tokenInTriggerPrice,
+        this.orderStatusMap[o.orderState],
+      );
     });
 
     this.setState({ orders });
   };
 
-  handleOrderAction = async (orderId, actionType) => {
+  handleOrderAction = async (orderId: number, actionType: string | null) => {
     switch (actionType) {
       case 'cancel':
         await this.cancelOrder(orderId);
@@ -132,17 +146,17 @@ export default class OrdersCard extends React.Component {
         break;
     }
 
-    const lastCheckedTimestamp = Math.floor(new Date() / 1000);
+    const lastCheckedTimestamp = Math.floor(Date.now() / 1000);
     ordersStore.dispatch(checked({ lastCheckedTimestamp }));
   };
 
-  convertTokenAmountToBalance = async (contract, symbol, balance) => {
+  convertTokenAmountToBalance = async (contract: Contract, symbol: string, balance: string) => {
     const decimals = await this.getCachedTokenDecimals(contract, symbol);
     const balanceBig = new Big(`${balance}e-${decimals}`);
     return balanceBig.toString();
   };
 
-  getCachedTokenDecimals = async (contract, symbol) => {
+  getCachedTokenDecimals = async (contract: Contract, symbol: string) => {
     if (this.decimalsMap[symbol]) {
       return this.decimalsMap[symbol];
     }
@@ -150,57 +164,57 @@ export default class OrdersCard extends React.Component {
     const tokenAddresses = await contract.functions.tryGetTokenAddress(symbol);
     const tokenAddress = tokenAddresses[0];
     const tokenContract = new ethers.Contract(tokenAddress, erc20ContractAbi, this.createNodeProvider());
-    const decimals = tokenContract.functions.decimals();
+    const decimals = await tokenContract.functions.decimals();
     this.decimalsMap[symbol] = decimals;
     return decimals;
   };
 
-  createAlertSetPayload = (variant, code, msgPrimary, msgSecondary) => ({
+  createAlertSetPayload = (variant: string, code: number, msgPrimary: string, msgSecondary: string | null) => ({
     variant,
     code,
     msgPrimary,
     msgSecondary
   });
 
-  dispatchAlertSet = payload => alertStore.dispatch(alertSet(payload));
+  dispatchAlertSet = (payload: AlertPayload) => alertStore.dispatch(alertSet(payload));
 
-  cancelOrder = async (orderId) => {
-    const providerMetamask = new ethers.providers.Web3Provider(window.ethereum);
+  cancelOrder = async (orderId: number) => {
+    const providerMetamask = new ethers.providers.Web3Provider((window as any).ethereum);
     const signer = providerMetamask.getSigner();
     const contract = this.createOrdersContract(signer);
     this.dispatchAlertSet(this.createAlertSetPayload('primary', 1, literals.CONFIRM_METAMASK_TX, literals.CANCEL_CONFIRM));
 
-    let tx;
-    try {
+    let tx: ContractTransaction | null;
+    const cancelResult = await tryMetamaskOpAsync(async () => {
       tx = await contract.functions.cancelOrder(orderId);
-    } catch (err) {
-      console.log(err);
-      const msg = mapMetamaskErrorToMessage(err.code);
+    });
 
-      this.dispatchAlertSet(this.createAlertSetPayload('secondary', 1, msg, null));
+    if (!cancelResult) {
       return;
     }
 
     this.dispatchAlertSet(this.createAlertSetPayload('info', 1, literals.CANCEL_PROCESSING, literals.CANCEL_REFUND));
-    try {
-      const txReceipt = await tx.wait();
-      if (txReceipt.status === 0) {
-        throw txReceipt;
-      }
 
-      const event = txReceipt.events.find(e => e.event === 'OrderCancelled');
-      const tokenInAmount = parseInt(event.args.tokenInAmount._hex, 16);
-      const refundBalance = await this.convertTokenAmountToBalance(contract, event.args.tokenIn, tokenInAmount);
-      const refundDetails = `Refunded ${refundBalance} ${event.args.tokenIn} to "${event.args.owner}"`;
-      const blockExplorerTransactionUrl = blockExplorerUrls[connectionStore.getState().networkId];
-      const txUrl = `${blockExplorerTransactionUrl}/${txReceipt.transactionHash}`;
-
-      this.dispatchAlertSet(this.createAlertSetPayload('success', 1, refundDetails, txUrl));
-    } catch (err) {
-      console.log(err);
-      const msg = mapMetamaskErrorToMessage(err.reason);
-      this.dispatchAlertSet(this.createAlertSetPayload('warning', 1, msg, null));
+    const txReceipt: ContractReceipt = await tx!.wait();
+    if (txReceipt.status === 0) {
+      throw txReceipt;
     }
+    if (!txReceipt.events) {
+      throw 'Transaction events not found';
+    }
+
+    const event: Event | undefined = txReceipt.events.find((e: Event) => e.event === 'OrderCancelled');
+    if (!event?.args) {
+      throw 'OrderCancelled event not found';
+    }
+
+    const tokenInAmount = parseInt(event.args.tokenInAmount._hex, 16).toString();
+    const refundBalance = await this.convertTokenAmountToBalance(contract, event.args.tokenIn, tokenInAmount);
+    const refundDetails = `Refunded ${refundBalance} ${event.args.tokenIn} to "${event.args.owner}"`;
+    const blockExplorerTransactionUrl = blockExplorerUrls[connectionStore.getState().networkId];
+    const txUrl = `${blockExplorerTransactionUrl}/${txReceipt.transactionHash}`;
+
+    this.dispatchAlertSet(this.createAlertSetPayload('success', 1, refundDetails, txUrl));
   };
 
   render() {

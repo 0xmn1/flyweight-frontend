@@ -1,20 +1,57 @@
-import { ethers } from 'ethers';
-import Big from 'big.js';
-import { createOrdersContract } from './ethersFactory';
-import ordersContractAbi from './resources/abi-orders-smart-contract.json';
-import erc20ContractAbi from './resources/abi-erc20-contract.json';
-import { alertStore, alertSet } from '../redux/alertStore';
-import { mapMetamaskErrorToMessage } from '../utils/alertMap';
-import { connectionStore } from '../redux/connectionStore';
-import { orderContractAddresses } from '../utils/networkMap';
-import literals from './resources/literals/english.json';
+import { Signer, ethers } from 'ethers';
+import { alertSet, alertStore } from '../redux/alertStore';
 
-const setAlert = (variant, code, msgPrimary, msgSecondary) => {
+import Big from 'big.js';
+import { connectionStore } from '../redux/connectionStore';
+import { createOrdersContract } from './ethersFactory';
+import erc20ContractAbi from './resources/abi-erc20-contract.json';
+import literals from './resources/literals/english.json';
+import { orderContractAddresses } from './networkMap';
+import ordersContractAbi from './resources/abi-orders-smart-contract.json';
+import { tryMetamaskOpAsync } from './providerAdapter';
+
+export class Order {
+  constructor(
+    public tokenInDecimalAmount: number,
+    public tokenInSymbol: string,
+    public tokenOutSymbol: string,
+    public triggerDirection: number,
+    public triggerPrice: string,
+  ) {
+  }
+}
+
+export type OrderResponseDto = {
+  id: { _hex: string },
+  owner: string,
+  tokenInAmount: { _hex: string },
+  tokenIn: string,
+  tokenInTriggerPrice: string,
+  tokenOut: string,
+  direction: number,
+  orderState: number,
+};
+
+export class OrderResponse {
+  constructor(
+    public orderId: number,
+    public anonOrderId: string,
+    public tokenInAmount: string,
+    public tokenIn: string,
+    public tokenOut: string,
+    public direction: string,
+    public tokenInTriggerPrice: string,
+    public orderState: string,
+  ) {
+  }
+}
+
+const setAlert = (variant: string, code: number, msgPrimary: string, msgSecondary: string | null) => {
   const alert = { variant, code, msgPrimary, msgSecondary };
   alertStore.dispatch(alertSet(alert));
 };
 
-export const addOrder = async (signer, order) => {
+export const addOrder = async (signer: Signer, order: Order) => {
   const contractAddress = orderContractAddresses[connectionStore.getState().networkId];
   const contract = createOrdersContract(contractAddress, ordersContractAbi, signer);
   const tokenInAddresses = await contract.functions.tryGetTokenAddress(order.tokenInSymbol);
@@ -25,14 +62,14 @@ export const addOrder = async (signer, order) => {
   const tokenInAmount = new Big(`${order.tokenInDecimalAmount}e${tokenInDecimals}`);
   const tokenInAmountStr = tokenInAmount.toString();
 
-  try {
+  await tryMetamaskOpAsync(async () => {
     setAlert('primary', 2, literals.CONFIRM_METAMASK_TX_STEP_1, literals.CONFIRM_METAMASK_TX_STEP_EXPLANATION);
     const txNewOrder = await contract.functions.addNewOrder(
-        order.tokenInSymbol,
-        order.tokenOutSymbol,
-        order.triggerPrice,
-        order.triggerDirection,
-        tokenInAmountStr,
+      order.tokenInSymbol,
+      order.tokenOutSymbol,
+      order.triggerPrice,
+      order.triggerDirection,
+      tokenInAmountStr,
     );
 
     setAlert('info', 3, literals.TX_PROCESSING_1, literals.APPROVAL_T);
@@ -50,9 +87,5 @@ export const addOrder = async (signer, order) => {
     }
 
     setAlert('success', 6, literals.ORDER_LIVE, literals.DEX);
-  } catch (err) {
-    console.log(err);
-    const msg = mapMetamaskErrorToMessage(err.reason);
-    setAlert('secondary', 1, msg, null);
-  }
+  });
 };

@@ -1,6 +1,20 @@
-import { createSlice, configureStore } from '@reduxjs/toolkit';
+import { configureStore, createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
+type AlertStoreState = {
+  variant: string | null,
+  code: number | null,
+  msgPrimary: string | null,
+  msgSecondary: string | null,
+};
+
+export type AlertPayload = {
+  variant: string,
+  code: number,
+  msgPrimary: string,
+  msgSecondary: string | null
+};
+
+const initialState: AlertStoreState = {
   variant: null,
   code: null,
   msgPrimary: null,

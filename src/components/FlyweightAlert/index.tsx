@@ -1,14 +1,20 @@
-import React from 'react';
+import { alertSet, alertStore } from '../../redux/alertStore';
+
 import Alert from 'react-bootstrap/Alert';
 import Fade from 'react-bootstrap/Fade';
 import Ping from '../Ping';
-import styles from './FlyweightAlert.module.scss';
+import React from 'react';
 import { alertCodeMap } from '../../utils/alertMap';
-import { alertStore, alertSet } from '../../redux/alertStore';
+import styles from './FlyweightAlert.module.scss';
 
-export default class FlyweightAlert extends React.Component {
-  constructor() {
-    super();
+type Props = {};
+type State = {
+  show: boolean,
+};
+
+export default class FlyweightAlert extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
     this.state = {
       show: false
     };
