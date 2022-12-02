@@ -2,8 +2,8 @@ import { Signer, ethers } from 'ethers';
 import { alertSet, alertStore } from '../redux/alertStore';
 
 import Big from 'big.js';
+import { ContractFactory } from './ethersFactory';
 import { connectionStore } from '../redux/connectionStore';
-import { createOrdersContract } from './ethersFactory';
 import erc20ContractAbi from './resources/abi-erc20-contract.json';
 import literals from './resources/literals/english.json';
 import { orderContractAddresses } from './networkMap';
@@ -53,7 +53,7 @@ const setAlert = (variant: string, code: number, msgPrimary: string, msgSecondar
 
 export const addOrder = async (signer: Signer, order: Order) => {
   const contractAddress = orderContractAddresses[connectionStore.getState().networkId];
-  const contract = createOrdersContract(contractAddress, ordersContractAbi, signer);
+  const contract = ContractFactory.createOrdersWriteContract(contractAddress, ordersContractAbi, signer);
   const tokenInAddresses = await contract.functions.tryGetTokenAddress(order.tokenInSymbol);
   const tokenInAddress = tokenInAddresses[0];
   const tokenInContract = new ethers.Contract(tokenInAddress, erc20ContractAbi, signer);

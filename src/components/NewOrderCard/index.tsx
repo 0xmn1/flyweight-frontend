@@ -1,8 +1,8 @@
+import { ContractFactory, createMetamaskProvider, createNodeProvider } from '../../utils/ethersFactory';
 import { Order, addOrder } from '../../utils/ordersContractFactory';
 import { alertClear, alertSet, alertStore } from '../../redux/alertStore';
 import { alertCodes, mapMetamaskErrorToMessage } from '../../utils/alertMap';
 import { checked, ordersStore } from '../../redux/ordersStore';
-import { createMetamaskProvider, createNodeProvider, createOrdersContract } from '../../utils/ethersFactory';
 import { networkNames, nodeProviderPublicApiKeys } from '../../utils/networkMap';
 
 import Big from 'big.js';
@@ -67,7 +67,7 @@ export default class NewOrderCard extends React.Component<Props, State> {
     const providerApiKey = nodeProviderPublicApiKeys[networkId];
     const provider = createNodeProvider(providerNetworkName, providerApiKey);
     const ordersContractAddress = orderContractAddresses[networkId];
-    const contract = createOrdersContract(ordersContractAddress, ordersContractAbi, provider);
+    const contract = ContractFactory.createOrdersReadContract(ordersContractAddress, ordersContractAbi, provider);
     const res = await contract.functions.getWhitelistedSymbols(coinSymbols);
     return res[0];
   };

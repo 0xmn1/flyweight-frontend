@@ -7,6 +7,7 @@ import { checked, ordersStore } from '../../redux/ordersStore';
 import Badge from 'react-bootstrap/Badge';
 import Big from 'big.js';
 import Card from 'react-bootstrap/Card';
+import { ContractFactory } from '../../utils/ethersFactory';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Loading from '../Loading';
@@ -14,7 +15,6 @@ import React from 'react';
 import Table from 'react-bootstrap/Table';
 import { connectionStore } from '../../redux/connectionStore';
 import { createNodeProvider } from '../../utils/ethersFactory';
-import { createOrdersContract } from '../../utils/ethersFactory';
 import erc20ContractAbi from '../../utils/resources/abi-erc20-contract.json';
 import literals from '../../utils/resources/literals/english.json';
 import { mapMetamaskErrorToMessage } from '../../utils/alertMap';
@@ -29,6 +29,8 @@ type Props = {
 type State = {
   orders: Array<OrderResponse> | null,
 };
+
+const ordersContractAddress = orderContractAddresses[connectionStore.getState().networkId];
 
 export default class OrdersCard extends React.Component<Props, State> {
   private orderDirectionMap: { [key: number]: string };
@@ -82,11 +84,6 @@ export default class OrdersCard extends React.Component<Props, State> {
     return createNodeProvider(providerNetworkName, providerApiKey);
   };
 
-  createOrdersContract = (providerOrSigner: providers.Provider | Signer) => {
-    const address = orderContractAddresses[connectionStore.getState().networkId];
-    return createOrdersContract(address, ordersContractAbi, providerOrSigner);
-  };
-
   setUserOrderDashboard = async (account: string | null) => {
     this.setState({ orders: null });
 
@@ -96,12 +93,11 @@ export default class OrdersCard extends React.Component<Props, State> {
     }
 
     const provider = this.createNodeProvider();
-    const contract = this.createOrdersContract(provider);
+    const contract = ContractFactory.createOrdersReadContract(ordersContractAddress, ordersContractAbi, provider);
     const txResponse = await contract.functions.getOrdersByAddress(account);
     const ordersResponse = txResponse[0];
-
     const decimalsMap: { [key: string]: number } = {};
-    const symbols = ordersResponse.reduce((set: Set<string>, order: Order) => set.add(order.tokenInSymbol), new Set());
+    const symbols = ordersResponse.reduce((set: Set<string>, order: OrderResponseDto) => set.add(order.tokenIn), new Set());
     for (let symbol of symbols) {
       const isCached = decimalsMap.hasOwnProperty(symbol);
       if (!isCached) {
@@ -181,7 +177,7 @@ export default class OrdersCard extends React.Component<Props, State> {
   cancelOrder = async (orderId: number) => {
     const providerMetamask = new ethers.providers.Web3Provider((window as any).ethereum);
     const signer = providerMetamask.getSigner();
-    const contract = this.createOrdersContract(signer);
+    const contract = ContractFactory.createOrdersWriteContract(ordersContractAddress, ordersContractAbi, signer);
     this.dispatchAlertSet(this.createAlertSetPayload('primary', 1, literals.CONFIRM_METAMASK_TX, literals.CANCEL_CONFIRM));
 
     let tx: ContractTransaction | null;
