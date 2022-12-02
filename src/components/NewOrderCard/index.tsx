@@ -82,12 +82,12 @@ export default class NewOrderCard extends React.Component<Props, State> {
       this.setAlert('warning', alertCodes.FAQ, literals.SWAP_FROM, null);
     } else if (!this.state.tokenOutSymbol) {
       this.setAlert('warning', alertCodes.FAQ, literals.SWAP_TO, null);
-    } else if (this.state.tokenInDecimalAmount <= 0) {
-      this.setAlert('warning', alertCodes.FAQ, 'Please select a postive number of tokens to swap.', `Your order is currently configured to swap "${this.state.tokenInDecimalAmount}" tokens`);
+    } else if (!this.state.tokenInDecimalAmount || this.state.tokenInDecimalAmount <= 0) {
+      this.setAlert('warning', alertCodes.FAQ, 'Please select a valid number of tokens to swap.', `Your order is currently configured to swap "${this.state.tokenInDecimalAmount}" tokens`);
     } else if (this.state.tokenInSymbol === this.state.tokenOutSymbol) {
       this.setAlert('warning', alertCodes.FAQ, 'Please select 2 different pairs of tokens to swap.', `Your order is currently configured to swap "${this.state.tokenInSymbol}" to "${this.state.tokenOutSymbol}"`);
-    } else if (new Big(this.state.triggerPrice).lt(0)) {
-      this.setAlert('warning', alertCodes.FAQ, 'Please select a non-negative trigger price.', `Your order is currently configured to trigger at "${this.state.triggerPrice} $USD"`);
+    } else if (!this.state.triggerPrice || new Big(this.state.triggerPrice).lt(0)) {
+      this.setAlert('warning', alertCodes.FAQ, 'Please select a valid trigger price.', `Your order is currently configured to trigger at "${this.state.triggerPrice} $USD"`);
     } else {
       alertStore.dispatch(alertClear());
       const provider = createMetamaskProvider(window);
@@ -133,7 +133,7 @@ export default class NewOrderCard extends React.Component<Props, State> {
             <Form.Group className="mb-3">
               <Form.Text>I want to swap...</Form.Text>
               <Stack direction="horizontal" gap={1} className="mb-2">
-                <Form.Control type="number" min="0" step="0.001" placeholder="example: 10.0001" defaultValue={this.state.tokenInDecimalAmount} onChange={e => this.setState({ tokenInDecimalAmount: parseFloat(e.target.value) })} />
+                <Form.Control type="number" min="0" step="0.001" placeholder="example: 10.0001" defaultValue={this.state.tokenInDecimalAmount} onChange={e => this.setState({ tokenInDecimalAmount: parseFloat(e.target.value) })} required />
                 <DropdownButton title={this.state.tokenInSymbol} onSelect={tokenInSymbol => this.setState({ tokenInSymbol })} variant="dark">
                   {coinSymbols.map((symbol: string) => (
                     <Dropdown.Item key={symbol} eventKey={symbol} active={this.state.tokenInSymbol === symbol} disabled={!this.whitelistedCoinsSymbols.includes(symbol)}>{symbol}</Dropdown.Item>
@@ -153,7 +153,7 @@ export default class NewOrderCard extends React.Component<Props, State> {
                     <Dropdown.Item key={d} eventKey={d} active={this.state.triggerDirection === d}>{this.triggerDirectionNames[d]}</Dropdown.Item>
                   ))}
                 </DropdownButton>
-                <Form.Control type="number" min="0" step="0.01" placeholder="example: 250.90" defaultValue={this.state.triggerPrice} onChange={e => this.setState({ triggerPrice: e.target.value })} />
+                <Form.Control type="number" min="0" step="0.01" placeholder="example: 250.90" defaultValue={this.state.triggerPrice} onChange={e => this.setState({ triggerPrice: e.target.value })} required />
                 <Form.Text>USD$</Form.Text>
               </Stack>
             </Form.Group>

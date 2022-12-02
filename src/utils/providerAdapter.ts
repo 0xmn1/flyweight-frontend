@@ -22,7 +22,7 @@ const handleMetamaskError = (err: unknown): void => {
 
 export const tryMetamaskOpAsync = async (func: () => Promise<void>): Promise<boolean> => {
   try {
-    await func;
+    await func();
     return true;
   } catch (err) {
     handleMetamaskError(err);

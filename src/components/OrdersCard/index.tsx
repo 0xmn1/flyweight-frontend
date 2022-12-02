@@ -232,7 +232,7 @@ export default class OrdersCard extends React.Component<Props, State> {
               <Table responsive striped bordered hover>
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>Anonymous order ID</th>
                     <th>Swap amount</th>
                     <th>Swap from</th>
                     <th>Swap to</th>
