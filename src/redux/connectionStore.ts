@@ -1,6 +1,13 @@
-import { createSlice, configureStore } from '@reduxjs/toolkit';
+import { configureStore, createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
+import { networkNames } from '../utils/networkMap';
+
+type ConnectionStoreState = {
+  networkId: string,
+  account: string | null,
+};
+
+const initialState: ConnectionStoreState = {
   networkId: process.env.REACT_APP_NETWORK_ID,
   account: null,
 };

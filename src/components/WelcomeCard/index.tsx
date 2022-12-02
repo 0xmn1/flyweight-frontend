@@ -1,7 +1,11 @@
-import React from 'react';
 import Card from 'react-bootstrap/Card';
+import React from 'react';
 
-const WelcomeCard = props => (
+type Props = {
+  className: string
+};
+
+const WelcomeCard = (props: Props) => (
   <Card className={props.className}>
     <Card.Body>
       <Card.Title>

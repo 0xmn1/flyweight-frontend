@@ -2,17 +2,32 @@
   "extends": "google",
   "parserOptions": {
     "sourceType": "module",
-    "ecmaVersion": 2022
+    "ecmaVersion": 2016
   },
   "globals": {
     "BigInt": true
   },
+  "plugins": [
+    "simple-import-sort"
+  ],
   "rules": {
     "object-curly-spacing": "off",
     "max-len": [
       "error",
       {
         "code": 120
+      }
+    ],
+    "require-jsdoc": [
+      "error",
+      {
+        "require": {
+          "FunctionDeclaration": false,
+          "MethodDefinition": false,
+          "ClassDeclaration": false,
+          "ArrowFunctionExpression": false,
+          "FunctionExpression": false
+        }
       }
     ]
   }

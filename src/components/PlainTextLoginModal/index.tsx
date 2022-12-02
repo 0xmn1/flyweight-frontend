@@ -1,24 +1,32 @@
-import React from 'react';
+import { connected, connectionStore } from '../../redux/connectionStore';
+
 import Button from 'react-bootstrap/Button';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
-import { connectionStore, connected } from '../../redux/connectionStore';
+import React from 'react';
+import { networkNames } from '../../utils/networkMap';
 
-export default class PlainTextLoginModal extends React.Component {
-  constructor() {
-    super();
+type Props = {
+  show: boolean,
+  onHide: () => void,
+};
 
-    this.networkNames = {
-      '0x1': 'mainnet',
-      '0x5': 'goerli'
-    };
+type State = {
+  networkId: string,
+  account: string | undefined
+};
 
-    this.state = {
-      networkId: '0x5',
-      account: '0xAF3e8346F1B57B0915851dBA3a1CDE65CF8dF522'
-    };
+const initialState: State = {
+  networkId: '0x5',
+  account: '0xAF3e8346F1B57B0915851dBA3a1CDE65CF8dF522'
+};
+
+export default class PlainTextLoginModal extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = initialState;
   }
 
   connected = () => {
@@ -29,9 +37,9 @@ export default class PlainTextLoginModal extends React.Component {
   };
 
   render() {
-    const networkName = connectionStore.getState().manualLoginNetworkName;
-    const networkOptions = Object.keys(this.networkNames).map(networkId => (
-      <Dropdown.Item key={networkId} eventKey={networkId} active={this.state.networkId === networkId}>{this.networkNames[networkId]}</Dropdown.Item>
+    const networkName = networkNames[connectionStore.getState().networkId];
+    const networkOptions = Object.keys(networkNames).map(networkId => (
+      <Dropdown.Item key={networkId} eventKey={networkId} active={this.state.networkId === networkId}>{networkNames[networkId]}</Dropdown.Item>
     ));
 
     return (
@@ -45,7 +53,7 @@ export default class PlainTextLoginModal extends React.Component {
           <h6>Wallet address:</h6>
           <Form.Control type="text" placeholder="e.g.: '0xAF3e8346F1B57B0915851dBA3a1CDE65CF8dF522'" defaultValue={this.state.account} onChange={e => this.setState({ account: e.target.value })} />
           <h6>Network:</h6>
-          <DropdownButton title={this.networkNames[this.state.networkId]} onSelect={networkId => this.setState({ networkId })} variant="dark">
+          <DropdownButton title={networkNames[this.state.networkId]} onSelect={networkId => networkId && this.setState({ networkId })} variant="dark">
             {networkOptions}
           </DropdownButton>
         </Modal.Body>
