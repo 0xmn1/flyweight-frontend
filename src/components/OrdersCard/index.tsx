@@ -1,8 +1,9 @@
 import { AlertPayload, alertSet, alertStore } from '../../redux/alertStore';
 import { Contract, ContractReceipt, ContractTransaction, Event, Signer, ethers, providers } from 'ethers';
 import { Order, OrderResponse, OrderResponseDto } from '../../utils/ordersContractFactory';
+import { alertCodes, mapMetamaskErrorToMessage } from '../../utils/alertMap';
 import { blockExplorerUrls, networkNames, nodeProviderPublicApiKeys, orderContractAddresses } from '../../utils/networkMap';
-import { checked, ordersStore } from '../../redux/ordersStore';
+import { checked, depositPending, ordersLoaded, ordersStore } from '../../redux/ordersStore';
 
 import Badge from 'react-bootstrap/Badge';
 import Big from 'big.js';
@@ -10,14 +11,17 @@ import Card from 'react-bootstrap/Card';
 import { ContractFactory } from '../../utils/ethersFactory';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
+import { InfoCircleFill } from 'react-bootstrap-icons';
 import Loading from '../Loading';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import React from 'react';
 import Table from 'react-bootstrap/Table';
+import Tooltip from 'react-bootstrap/Tooltip';
 import { connectionStore } from '../../redux/connectionStore';
 import { createNodeProvider } from '../../utils/ethersFactory';
 import erc20ContractAbi from '../../utils/resources/abi-erc20-contract.json';
+import gasLimits from '../../utils/resources/gas-limits.json';
 import literals from '../../utils/resources/literals/english.json';
-import { mapMetamaskErrorToMessage } from '../../utils/alertMap';
 import ordersContractAbi from '../../utils/resources/abi-orders-smart-contract.json';
 import { tryMetamaskOpAsync } from '../../utils/providerAdapter';
 import watch from 'redux-watch';
@@ -51,8 +55,9 @@ export default class OrdersCard extends React.Component<Props, State> {
 
     this.orderStatusMap = {
       0: 'Untriggered',
-      1: 'Executed',
-      2: 'Cancelled'
+      1: 'Pending deposit',
+      2: 'Executed',
+      3: 'Cancelled'
     };
 
     this.decimalsMap = {};
@@ -109,7 +114,7 @@ export default class OrdersCard extends React.Component<Props, State> {
       }
     }
 
-    const orders = ordersResponse.map((o: OrderResponseDto) => {
+    const orders: OrderResponse[] = ordersResponse.map((o: OrderResponseDto) => {
       const orderId = parseInt(o.id._hex, 16);
       const ownerTail = o.owner.substring(o.owner.length - 4, o.owner.length);
       const tokenInAmountInt = parseInt(o.tokenInAmount._hex, 16);
@@ -129,6 +134,9 @@ export default class OrdersCard extends React.Component<Props, State> {
       );
     });
 
+    const isOrderDepositPending = orders.some(o => o.orderState === this.orderStatusMap[1]);
+    ordersStore.dispatch(depositPending({ isOrderDepositPending }));
+    ordersStore.dispatch(ordersLoaded({ isOrdersLoaded: true }))
     this.setState({ orders });
   };
 
@@ -178,18 +186,18 @@ export default class OrdersCard extends React.Component<Props, State> {
     const providerMetamask = new ethers.providers.Web3Provider((window as any).ethereum);
     const signer = providerMetamask.getSigner();
     const contract = ContractFactory.createOrdersWriteContract(ordersContractAddress, ordersContractAbi, signer);
-    this.dispatchAlertSet(this.createAlertSetPayload('primary', 1, literals.CONFIRM_METAMASK_TX, literals.CANCEL_CONFIRM));
+    this.dispatchAlertSet(this.createAlertSetPayload('primary', alertCodes.FAQ, literals.CONFIRM_METAMASK_TX, literals.CANCEL_CONFIRM));
 
     let tx: ContractTransaction | null;
     const cancelResult = await tryMetamaskOpAsync(async () => {
-      tx = await contract.functions.cancelOrder(orderId);
+      tx = await contract.functions.cancelOrder(orderId, { gasLimit: gasLimits.CANCEL_ORDER });
     });
 
     if (!cancelResult) {
       return;
     }
 
-    this.dispatchAlertSet(this.createAlertSetPayload('info', 1, literals.CANCEL_PROCESSING, literals.CANCEL_REFUND));
+    this.dispatchAlertSet(this.createAlertSetPayload('info', alertCodes.FAQ, literals.CANCEL_PROCESSING, literals.CANCEL_REFUND));
 
     const txReceipt: ContractReceipt = await tx!.wait();
     if (txReceipt.status === 0) {
@@ -206,12 +214,29 @@ export default class OrdersCard extends React.Component<Props, State> {
 
     const tokenInAmount = parseInt(event.args.tokenInAmount._hex, 16).toString();
     const refundBalance = await this.convertTokenAmountToBalance(contract, event.args.tokenIn, tokenInAmount);
-    const refundDetails = `Refunded ${refundBalance} ${event.args.tokenIn} to "${event.args.owner}"`;
+    const refundDetails = 'Order cancelled successfully.';
     const blockExplorerTransactionUrl = blockExplorerUrls[connectionStore.getState().networkId];
     const txUrl = `${blockExplorerTransactionUrl}/${txReceipt.transactionHash}`;
 
-    this.dispatchAlertSet(this.createAlertSetPayload('success', 1, refundDetails, txUrl));
+    this.dispatchAlertSet(this.createAlertSetPayload('success', alertCodes.FAQ, refundDetails, txUrl));
   };
+
+  getBadgeBgForOrderState = (orderState: string): string => {
+    const map = {
+      [this.orderStatusMap[0]]: 'warning',
+      [this.orderStatusMap[1]]: 'info',
+      [this.orderStatusMap[2]]: 'success',
+      [this.orderStatusMap[3]]: 'secondary'
+    };
+
+    return map[orderState];
+  };
+
+  createOverlayTooltip = (msg: string) => (
+    <OverlayTrigger placement="bottom" overlay={(<Tooltip>{msg}</Tooltip>)}>
+      <InfoCircleFill color="gray" size={16} className="ms-1" />
+    </OverlayTrigger>
+  );
 
   render() {
     const account = connectionStore.getState().account;
@@ -232,13 +257,33 @@ export default class OrdersCard extends React.Component<Props, State> {
               <Table responsive striped bordered hover>
                 <thead>
                   <tr>
-                    <th>Anonymous order ID</th>
-                    <th>Swap amount</th>
-                    <th>Swap from</th>
-                    <th>Swap to</th>
-                    <th>Trigger (USD)</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>
+                      Anonymous order ID
+                      {this.createOverlayTooltip('This ID is just used as a reference to keep track of orders')}
+                    </th>
+                    <th>
+                      Swap amount
+                      {this.createOverlayTooltip('The amount of tokens that will be swapped if/when an order is triggered')}
+                    </th>
+                    <th>
+                      Swap from
+                      {this.createOverlayTooltip('This is the token deposited and will be used to swap to something else')}
+                    </th>
+                    <th>
+                      Swap to
+                      {this.createOverlayTooltip('The token that will be automatically sent to the order owner upon trigger')}
+                    </th>
+                    <th>
+                      Trigger (USD)
+                      {this.createOverlayTooltip('Quotes are in USD. Prices are fetched using an oracle that leverages the official CoinMarketCap API')}
+                    </th>
+                    <th>
+                      Status
+                      {this.createOverlayTooltip('Tokens are immediately sent upon swap execution')}
+                    </th>
+                    <th>
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -252,19 +297,13 @@ export default class OrdersCard extends React.Component<Props, State> {
                         {o.direction}&nbsp;${o.tokenInTriggerPrice}
                       </td>
                       <td>
-                        {o.orderState === 'Untriggered' ? (
-                          <Badge bg="warning" text="dark">{o.orderState}</Badge>
-                        ) : (o.orderState === 'Executed' ? (
-                          <Badge bg="success">{o.orderState}</Badge>
-                        ) : (o.orderState === 'Cancelled') ? (
-                          <Badge bg="secondary">{o.orderState}</Badge>
-                        ) : (
-                          <Badge>{o.orderState}</Badge>
-                        ))}
+
+                        <Badge bg={this.getBadgeBgForOrderState(o.orderState)} text="dark">{o.orderState}</Badge>
                       </td>
                       <td>
                         <DropdownButton title="" onSelect={(actionType, _) => this.handleOrderAction(o.orderId, actionType)} variant="dark">
-                          <Dropdown.Item eventKey="cancel" disabled={o.orderState === 'Executed' || o.orderState === 'Cancelled'}>Cancel and refund order</Dropdown.Item>
+                          <Dropdown.Item eventKey="cancel" disabled={o.orderState !== this.orderStatusMap[1]}>Cancel order</Dropdown.Item>
+                          <Dropdown.Item eventKey="cancel" disabled={o.orderState !== this.orderStatusMap[0]}>Cancel and refund order</Dropdown.Item>
                         </DropdownButton>
                       </td>
                     </tr>

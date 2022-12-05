@@ -1,7 +1,7 @@
+import { alertCodes, mapMetamaskErrorToMessage } from './alertMap';
 import { alertSet, alertStore } from '../redux/alertStore';
 
 import literals from './resources/literals/english.json';
-import { mapMetamaskErrorToMessage } from './alertMap';
 import { serializeError } from 'eth-rpc-errors';
 
 const handleMetamaskError = (err: unknown): void => {
@@ -13,7 +13,7 @@ const handleMetamaskError = (err: unknown): void => {
 
   const alert = {
     variant: 'secondary',
-    code: 1,
+    code: alertCodes.FAQ,
     msgPrimary: msg,
     msgSecondary: null
   };

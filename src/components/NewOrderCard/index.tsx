@@ -19,6 +19,7 @@ import literals from '../../utils/resources/literals/english.json';
 import { orderContractAddresses } from '../../utils/networkMap';
 import ordersContractAbi from '../../utils/resources/abi-orders-smart-contract.json';
 import { tryMetamaskOpAsync } from '../../utils/providerAdapter';
+import watch from 'redux-watch';
 
 type Props = {
   isMetamaskProviderDetected: boolean,
@@ -29,7 +30,9 @@ type State = {
   tokenInSymbol: string | null,
   tokenOutSymbol: string | null,
   triggerDirection: number,
-  triggerPrice: string
+  triggerPrice: string,
+  isOrdersLoaded: boolean,
+  isOrderDepositPending: boolean
 };
 
 const initialState: State = {
@@ -37,7 +40,9 @@ const initialState: State = {
   tokenInSymbol: 'UNI',
   tokenOutSymbol: 'WETH',
   triggerDirection: 2,
-  triggerPrice: '0.02'
+  triggerPrice: '0.02',
+  isOrdersLoaded: false,
+  isOrderDepositPending: false,
 };
 
 export default class NewOrderCard extends React.Component<Props, State> {
@@ -59,6 +64,18 @@ export default class NewOrderCard extends React.Component<Props, State> {
 
   async componentDidMount() {
     this.whitelistedCoinsSymbols = await this.getWhitelistedCoinSymbols();
+
+    ordersStore.subscribe(() => {
+      const { isOrdersLoaded, isOrderDepositPending } = ordersStore.getState();
+      this.setState({ isOrdersLoaded, isOrderDepositPending });
+    });
+
+    const wc = watch(connectionStore.getState, 'account');
+    connectionStore.subscribe(wc(newAccount => {
+      if (!newAccount) {
+        this.setState(initialState);
+      }
+    }));
   }
 
   getWhitelistedCoinSymbols = async () => {
@@ -125,6 +142,10 @@ export default class NewOrderCard extends React.Component<Props, State> {
   };
 
   render() {
+    if (!this.state.isOrdersLoaded) {
+      return null;
+    }
+
     return (
       <Card>
         <Card.Body>
@@ -161,7 +182,7 @@ export default class NewOrderCard extends React.Component<Props, State> {
         </Card.Body>
         <Card.Footer>
           <div className="d-flex align-items-center justify-content-between">
-            <Button variant={this.props.isMetamaskProviderDetected === false ? 'secondary' : 'primary'} type="button" onClick={this.tryAddOrder} disabled={this.props.isMetamaskProviderDetected === false}>
+            <Button variant={this.props.isMetamaskProviderDetected === false ? 'secondary' : 'primary'} type="button" onClick={this.tryAddOrder} disabled={this.props.isMetamaskProviderDetected === false || this.state.isOrderDepositPending}>
               Create order
             </Button>
             <Card.Text>
@@ -170,6 +191,13 @@ export default class NewOrderCard extends React.Component<Props, State> {
               </small>
             </Card.Text>
           </div>
+          {this.state.isOrderDepositPending ? (
+            <Card.Text>
+              <small className="text-muted text-right">
+                You already have an order pending deposit. To create a new order, please cancel your order that is pending a deposit.
+              </small>
+            </Card.Text>
+          ) : null}
         </Card.Footer>
       </Card>
     );

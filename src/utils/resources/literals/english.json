@@ -1,9 +1,9 @@
 {
   "CONNECT_READ_ONLY": "If you prefer, you can also connect by \"pasting\" a wallet address into a textbox.",
   "CONFIRM_METAMASK_TX": "Please confirm the transaction in metamask.",
-  "CANCEL_CONFIRM": "This will be 1 transaction that returns 100% of your order's coins back to your wallet.",
+  "CANCEL_CONFIRM": "If you have deposited any coins, this transaction will also sent them back to your wallet.",
   "CANCEL_PROCESSING": "Cancelling your order now, beep boop...",
-  "CANCEL_REFUND": "This transaction is refunding 100% of your order's coins back to your wallet.",
+  "CANCEL_REFUND": "If you have deposited coins for this order, this transaction will return the order's coins back to your wallet.",
   "CONFIRM_METAMASK_TX_STEP_1": "Please confirm transaction [1] of [2] in metamask.",
   "CONFIRM_METAMASK_TX_STEP_EXPLANATION": "This will add your order to the ethereum smart contract. This transaction creates data and does not transfer any coins yet.",
   "CONFIRM_METAMASK_TX_STEP_2": "Please confirm transaction [2] of [2] in metamask.",
@@ -16,5 +16,6 @@
   "DEX": "This is a decentralized protocol: users can refund coin deposits at any time, yay. Goodluck in the casino comrade (you may now close this box/browser tab)",
   "UNKNOWN_ERR": "We're sorry, something went wrong",
   "SWAP_FROM": "Please select a symbol to swap from",
-  "SWAP_TO": "Please select a symbol to swap to"
+  "SWAP_TO": "Please select a symbol to swap to",
+  "DEPOSIT_CONFIRM": "Verifying your deposit transaction on the ethereum chain..."
 }

@@ -17,6 +17,7 @@ export const alertCodes: AlertCodes = {
   SELF_CUSTODY: 5,
   ORDER_LIVE: 6,
   HOW_BLOCKCHAIN_READ: 7,
+  HOW_DEPOSIT_VERIFIED: 8,
 };
 
 export const alertCodeMap: AlertCodeMap = {
@@ -48,6 +49,10 @@ export const alertCodeMap: AlertCodeMap = {
     label: 'How does Flyweight read the Ethereum blockchain?',
     href: '',
   },
+  [alertCodes.HOW_DEPOSIT_VERIFIED]: {
+    label: 'How does Flyweight verify on-chain deposits to the smart contract?',
+    href: '',
+  },
 };
 
 export const mapMetamaskErrorToMessage = (errorReasonOrCode: string | number) => {
@@ -59,6 +64,6 @@ export const mapMetamaskErrorToMessage = (errorReasonOrCode: string | number) =>
       return 'Please unlock Metamask to continue.';
     default:
       console.warn(`Unsuccessfully mapped metamask error to message: ${errorReasonOrCode}`);
-      return `We're sorry, something went wrong`;
+      return `Operation cancelled.`;
   }
 };
