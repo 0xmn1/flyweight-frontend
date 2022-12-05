@@ -19,6 +19,7 @@ import Row from 'react-bootstrap/Row';
 import WelcomeCard from './components/WelcomeCard';
 import detectEthereumProvider from '@metamask/detect-provider';
 import { ethers } from 'ethers';
+import { ordersStore } from './redux/ordersStore';
 import { tryMetamaskOpAsync } from './utils/providerAdapter';
 import watch from 'redux-watch';
 

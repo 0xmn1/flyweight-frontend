@@ -2,10 +2,14 @@ import { configureStore, createSlice } from '@reduxjs/toolkit';
 
 type OrdersStoreState = {
   lastCheckedTimestamp: number | null,
+  isOrdersLoaded: boolean,
+  isOrderDepositPending: boolean,
 };
 
 const initialState: OrdersStoreState = {
   lastCheckedTimestamp: null,
+  isOrdersLoaded: false,
+  isOrderDepositPending: false,
 };
 
 const slice = createSlice({
@@ -15,6 +19,12 @@ const slice = createSlice({
     checked: (state, action) => {
       state.lastCheckedTimestamp = action.payload.lastCheckedTimestamp;
     },
+    ordersLoaded: (state, action) => {
+      state.isOrdersLoaded = action.payload.isOrdersLoaded;
+    },
+    depositPending: (state, action) => {
+      state.isOrderDepositPending = action.payload.isOrderDepositPending;
+    },
   },
 });
 
@@ -22,5 +32,5 @@ const ordersStore = configureStore({
   reducer: slice.reducer,
 });
 
-const { checked } = slice.actions;
-export { ordersStore, checked };
+const { checked, depositPending, ordersLoaded } = slice.actions;
+export { ordersStore, checked, depositPending, ordersLoaded };

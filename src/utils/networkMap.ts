@@ -22,3 +22,7 @@ export const orderContractAddresses: NetworkMap = {
   '0x5': process.env.REACT_APP_ORDERS_CONTRACT_ADDRESS_GOERLI,
 };
 
+export const confirmDepositUrls: NetworkMap = {
+  '0x1': process.env.REACT_APP_CONFIRM_DEPOSIT_URL_MAINNET,
+  '0x5': process.env.REACT_APP_CONFIRM_DEPOSIT_URL_GOERLI,
+};
