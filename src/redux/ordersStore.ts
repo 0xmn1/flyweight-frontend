@@ -28,6 +28,7 @@ const slice = createSlice({
   },
 });
 
+// Redux store for user orders
 const ordersStore = configureStore({
   reducer: slice.reducer,
 });

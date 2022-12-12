@@ -20,6 +20,13 @@ const handleMetamaskError = (err: unknown): void => {
   alertStore.dispatch(alertSet(alert));
 };
 
+/*
+ * Light wrapper for metamask operations.
+ * @param func - lambda containing the metamask operations
+ * @returns true if lambda succeeded without error, otherwise false
+ * @remarks
+ * Metamask errors are caught & passed onto {@link handleMetamaskError} to enhance UX
+ */
 export const tryMetamaskOpAsync = async (func: () => Promise<void>): Promise<boolean> => {
   try {
     await func();

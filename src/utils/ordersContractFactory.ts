@@ -13,6 +13,7 @@ import literals from './resources/literals/english.json';
 import ordersContractAbi from './resources/abi-orders-smart-contract.json';
 import { tryMetamaskOpAsync } from './providerAdapter';
 
+// Represents a new order that a user is creating
 export class Order {
   constructor(
     public tokenInDecimalAmount: number,
@@ -24,6 +25,7 @@ export class Order {
   }
 }
 
+// Represents an order stored in the Flyweight smart contract 
 export type OrderResponseDto = {
   id: { _hex: string },
   owner: string,
@@ -35,6 +37,11 @@ export type OrderResponseDto = {
   orderState: number,
 };
 
+/*
+ * Represents a pre-existing user order.
+ * @remarks
+ * Hexes are converted to decimals.
+ */
 export class OrderResponse {
   constructor(
     public orderId: number,
@@ -54,13 +61,27 @@ const setAlert = (variant: string, code: number, msgPrimary: string, msgSecondar
   alertStore.dispatch(alertSet(alert));
 };
 
+/*
+ * Used to trigger confirmation of an on-chain deposit for a new order.
+ * Sends out a http request to an oracle which contains the verification logic.
+ */
 const confirmDeposit = async (networkId: string, signer: Signer) => {
   const confirmDepositUrl = confirmDepositUrls[networkId];
   const address = await signer.getAddress();
   console.log('Triggering deposit confirmation...');
   setAlert('info', alertCodes.HOW_DEPOSIT_VERIFIED, literals.DEPOSIT_CONFIRM, literals.TX_PROCESSING_2);
 
-  const maxEthBlockTime = 16000;  // Permitted max block time for ethereum PoS. This "max" is based on 2017-2022 historical block time data.
+  /*
+   * Wait before triggerring on-chain transaction verification.
+   * @remarks
+   * Etherscan API has a time lag when returning recently confirmed transactions.
+   * E.g.: there is usually a 5-25 second delay, between a block getting first confirmation, & the blocks' transactions being returned by the Etherscan API.
+   * 0xmn1 has confirmed this undocumented quirky behaviour with the Etherscan support team.
+   * Due to this undocumented new discovery, recommended to switch to a "real-time" provider.
+   * Further commentary in the oracle node module that calls the Etherscan API.
+   */
+  const maxEthBlockTime = 16000;
+
   await new Promise(resolve => setTimeout(resolve, maxEthBlockTime));  // After tx is included in a block, we should wait for the user on-chain deposit to be approved by nodes
   try {
     await axios.put(confirmDepositUrl, {}, {
@@ -77,6 +98,7 @@ const confirmDeposit = async (networkId: string, signer: Signer) => {
   }
 };
 
+// Adds a new order to the Flyweight smart contract
 export const addOrder = async (signer: Signer, order: Order) => {
   const networkId = connectionStore.getState().networkId;
   const contractAddress = orderContractAddresses[networkId];

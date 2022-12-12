@@ -9,6 +9,7 @@ interface AlertCodeMap {
   }
 }
 
+// Used to reference certain alert hyperlinks in {@link alertCodeMap}
 export const alertCodes: AlertCodes = {
   FAQ: 1,
   WHAT_IS_ETH_TX: 2,
@@ -20,6 +21,7 @@ export const alertCodes: AlertCodes = {
   HOW_DEPOSIT_VERIFIED: 8,
 };
 
+// Alert hyperlinks
 export const alertCodeMap: AlertCodeMap = {
   [alertCodes.FAQ]: {
     label: 'Frequently asked questions',
@@ -55,6 +57,7 @@ export const alertCodeMap: AlertCodeMap = {
   },
 };
 
+// Maps a metamask error code or reason, to a more user-friendly message
 export const mapMetamaskErrorToMessage = (errorReasonOrCode: string | number) => {
   switch (errorReasonOrCode) {
     case 'user rejected transaction':

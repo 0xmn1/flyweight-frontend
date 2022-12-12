@@ -36,6 +36,7 @@ const slice = createSlice({
   },
 });
 
+// Redux store for the alert banner
 const alertStore = configureStore({
   reducer: slice.reducer,
 });
