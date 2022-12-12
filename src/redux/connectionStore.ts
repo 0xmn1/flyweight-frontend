@@ -24,6 +24,7 @@ const slice = createSlice({
   },
 });
 
+// Redux store for blockchain connection info
 const connectionStore = configureStore({
   reducer: slice.reducer,
 });
