@@ -13,7 +13,6 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import Form from 'react-bootstrap/Form';
 import React from 'react';
 import Stack from 'react-bootstrap/Stack';
-import coinSymbols from '../../utils/resources/coin-symbols.json';
 import { connectionStore } from '../../redux/connectionStore';
 import literals from '../../utils/resources/literals/english.json';
 import { orderContractAddresses } from '../../utils/networkMap';
@@ -32,7 +31,8 @@ type State = {
   triggerDirection: number,
   triggerPrice: string,
   isOrdersLoaded: boolean,
-  isOrderDepositPending: boolean
+  isOrderDepositPending: boolean,
+  whitelistedCoinsSymbols: string[]
 };
 
 const initialState: State = {
@@ -43,17 +43,16 @@ const initialState: State = {
   triggerPrice: '0.02',
   isOrdersLoaded: false,
   isOrderDepositPending: false,
+  whitelistedCoinsSymbols: []
 };
 
 export default class NewOrderCard extends React.Component<Props, State> {
-  private whitelistedCoinsSymbols: Array<string>;
   private triggerDirections: Array<number>;
   private triggerDirectionNames: { [key: number]: string };
 
   constructor(props: Props) {
     super(props);
     this.state = initialState;
-    this.whitelistedCoinsSymbols = [];
     this.triggerDirections = [0, 1, 2];
     this.triggerDirectionNames = {
       0: 'below',
@@ -63,8 +62,6 @@ export default class NewOrderCard extends React.Component<Props, State> {
   }
 
   async componentDidMount() {
-    this.whitelistedCoinsSymbols = await this.getWhitelistedCoinSymbols();
-
     ordersStore.subscribe(() => {
       const { isOrdersLoaded, isOrderDepositPending } = ordersStore.getState();
       this.setState({ isOrdersLoaded, isOrderDepositPending });
@@ -76,6 +73,9 @@ export default class NewOrderCard extends React.Component<Props, State> {
         this.setState(initialState);
       }
     }));
+
+    const whitelistedCoinsSymbols = await this.getWhitelistedCoinSymbols();
+    this.setState({ whitelistedCoinsSymbols });
   }
 
   getWhitelistedCoinSymbols = async () => {
@@ -85,7 +85,7 @@ export default class NewOrderCard extends React.Component<Props, State> {
     const provider = createNodeProvider(providerNetworkName, providerApiKey);
     const ordersContractAddress = orderContractAddresses[networkId];
     const contract = ContractFactory.createOrdersReadContract(ordersContractAddress, ordersContractAbi, provider);
-    const res = await contract.functions.getWhitelistedSymbols(coinSymbols);
+    const res = await contract.functions.getWhitelistedSymbols();
     return res[0];
   };
 
@@ -156,14 +156,14 @@ export default class NewOrderCard extends React.Component<Props, State> {
               <Stack direction="horizontal" gap={1} className="mb-2">
                 <Form.Control type="number" min="0" step="0.001" placeholder="example: 10.0001" defaultValue={this.state.tokenInDecimalAmount} onChange={e => this.setState({ tokenInDecimalAmount: parseFloat(e.target.value) })} required />
                 <DropdownButton title={this.state.tokenInSymbol} onSelect={tokenInSymbol => this.setState({ tokenInSymbol })} variant="dark">
-                  {coinSymbols.map((symbol: string) => (
-                    <Dropdown.Item key={symbol} eventKey={symbol} active={this.state.tokenInSymbol === symbol} disabled={!this.whitelistedCoinsSymbols.includes(symbol)}>{symbol}</Dropdown.Item>
+                  {this.state.whitelistedCoinsSymbols.map((symbol: string) => (
+                    <Dropdown.Item key={symbol} eventKey={symbol} active={this.state.tokenInSymbol === symbol}>{symbol}</Dropdown.Item>
                   ))}
                 </DropdownButton>
                 <Form.Text>to</Form.Text>
                 <DropdownButton title={this.state.tokenOutSymbol} onSelect={tokenOutSymbol => this.setState({ tokenOutSymbol })} variant="dark">
-                  {coinSymbols.map((symbol: string) => (
-                    <Dropdown.Item key={symbol} eventKey={symbol} active={this.state.tokenOutSymbol === symbol} disabled={!this.whitelistedCoinsSymbols.includes(symbol)}>{symbol}</Dropdown.Item>
+                  {this.state.whitelistedCoinsSymbols.map((symbol: string) => (
+                    <Dropdown.Item key={symbol} eventKey={symbol} active={this.state.tokenOutSymbol === symbol}>{symbol}</Dropdown.Item>
                   ))}
                 </DropdownButton>
               </Stack>

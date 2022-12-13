@@ -75,12 +75,12 @@ const confirmDeposit = async (networkId: string, signer: Signer) => {
    * Wait before triggerring on-chain transaction verification.
    * @remarks
    * Etherscan API has a time lag when returning recently confirmed transactions.
-   * E.g.: there is usually a 5-25 second delay, between a block getting first confirmation, & the blocks' transactions being returned by the Etherscan API.
+   * E.g.: there is usually a 5-20 second delay, between a block getting first confirmation, & the blocks' transactions being returned by the Etherscan API.
    * 0xmn1 has confirmed this undocumented quirky behaviour with the Etherscan support team.
    * Due to this undocumented new discovery, recommended to switch to a "real-time" provider.
    * Further commentary in the oracle node module that calls the Etherscan API.
    */
-  const maxEthBlockTime = 16000;
+  const maxEthBlockTime = 20000;
 
   await new Promise(resolve => setTimeout(resolve, maxEthBlockTime));  // After tx is included in a block, we should wait for the user on-chain deposit to be approved by nodes
   try {
