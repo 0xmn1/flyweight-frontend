@@ -1,0 +1,40 @@
+@import "../../flyweight-theme.scss";
+
+/*
+ * !important is necessary due to the "react-bootstrap" package having limited
+ * customizability, in comparison to "bootstrap" (which is easily customizable by
+ * importing the official bootstrap mixins or functions).
+ */
+
+%base-btn {
+  border-radius: 100px !important;
+  color: $fw-white !important;
+  font-size: 0.9rem;
+  font-weight: bold;
+
+  &:hover,
+  &:active {
+    color: $fw-white !important;
+    text-decoration: underline !important;
+  }
+}
+
+.primary {
+  @extend %base-btn;
+  background: $fw-lochmara !important;
+
+  &:hover,
+  &:active {
+    background: $fw-lochmara !important;
+  }
+}
+
+.secondary {
+  @extend %base-btn;
+  background: $fw-emperor !important;
+
+  &:hover,
+  &:active {
+    background: $fw-emperor !important;
+  }
+}

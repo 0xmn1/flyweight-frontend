@@ -1,7 +1,7 @@
 'use strict';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import './flyweight-theme.scss';
 
 import { alertClear, alertStore } from './redux/alertStore';
 import { connected, connectionStore, disconnected } from './redux/connectionStore';
@@ -16,6 +16,7 @@ import OrdersCard from './components/OrdersCard';
 import PlainTextLoginModal from './components/PlainTextLoginModal';
 import React from 'react';
 import Row from 'react-bootstrap/Row';
+import Stack from 'react-bootstrap/Stack';
 import WelcomeCard from './components/WelcomeCard';
 import detectEthereumProvider from '@metamask/detect-provider';
 import { ethers } from 'ethers';
@@ -127,32 +128,38 @@ class App extends React.Component<Props, State> {
     const isConnectedToTestnet = !!(connectionStore.getState().account && connectionStore.getState().networkId !== '0x1');
     return (
       <>
-        <Banner show={isConnectedToTestnet} />
-        <Header isConnected={this.state.isConnected}
-          isMetamaskProviderDetected={this.state.isMetamaskProviderDetected}
-          toggleManualLoginModal={this.toggleManualLoginModal}
-          metamaskLogin={this.metamaskLogin}
-        />
-        <Container>
-          <Row>
-            <Col>
-              <FlyweightAlert />
-            </Col>
-          </Row>
-          <Row>
-            <Col xs={12} lg={8}>
-              {connectionStore.getState().account ? (
-                <OrdersCard className="mb-3 mb-lg-0" />
-              ) : (
-                <WelcomeCard className="mb-3 mb-lg-0" />
-              )}
-            </Col>
-            <Col xs={12} lg={4}>
-              <NewOrderCard isMetamaskProviderDetected={this.state.isMetamaskProviderDetected} />
-            </Col>
-          </Row>
-        </Container>
-        <PlainTextLoginModal show={this.state.showManualLoginModal} onHide={this.toggleManualLoginModal} />
+        <div className="d-grid gap-3">
+          <div>
+            <Header isConnected={this.state.isConnected}
+              isMetamaskProviderDetected={this.state.isMetamaskProviderDetected}
+              toggleManualLoginModal={this.toggleManualLoginModal}
+              metamaskLogin={this.metamaskLogin}
+            />
+            <Banner show={isConnectedToTestnet} />
+          </div>
+          <div>
+            <Container>
+              <Row>
+                <Col>
+                  <FlyweightAlert />
+                </Col>
+              </Row>
+              <Row>
+                <Col xs={12} lg={8}>
+                  {connectionStore.getState().account ? (
+                    <OrdersCard className="mb-3 mb-lg-0" />
+                  ) : (
+                    <WelcomeCard className="mb-3 mb-lg-0" />
+                  )}
+                </Col>
+                <Col xs={12} lg={4}>
+                  <NewOrderCard isMetamaskProviderDetected={this.state.isMetamaskProviderDetected} />
+                </Col>
+              </Row>
+            </Container>
+            <PlainTextLoginModal show={this.state.showManualLoginModal} onHide={this.toggleManualLoginModal} />
+          </div>
+        </div>
       </>
     );
   }
