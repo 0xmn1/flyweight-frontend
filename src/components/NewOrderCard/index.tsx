@@ -6,7 +6,7 @@ import { checked, ordersStore } from '../../redux/ordersStore';
 import { networkNames, nodeProviderPublicApiKeys } from '../../utils/networkMap';
 
 import Big from 'big.js';
-import Button from 'react-bootstrap/Button';
+import Button from '../Button';
 import Card from 'react-bootstrap/Card';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
@@ -182,7 +182,7 @@ export default class NewOrderCard extends React.Component<Props, State> {
         </Card.Body>
         <Card.Footer>
           <div className="d-flex align-items-center justify-content-between">
-            <Button variant={this.props.isMetamaskProviderDetected === false ? 'secondary' : 'primary'} type="button" onClick={this.tryAddOrder} disabled={this.props.isMetamaskProviderDetected === false || this.state.isOrderDepositPending}>
+            <Button className={this.props.isMetamaskProviderDetected === false ? 'secondary' : 'primary'} onClick={this.tryAddOrder} disabled={this.props.isMetamaskProviderDetected === false || this.state.isOrderDepositPending}>
               Create order
             </Button>
             <Card.Text>

@@ -1,0 +1,11 @@
+@import "../../flyweight-theme.scss";
+
+.logo {
+  height: 2rem;
+  width: 1.5rem;
+
+  g * {
+    stroke: $fw-white;
+    stroke-width: 5px;
+  }
+}

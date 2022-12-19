@@ -1,0 +1,30 @@
+@import "../../flyweight-theme.scss";
+
+.primary {
+  background: $fw-lochmara !important;
+  border-radius: 100px !important;
+  color: $fw-white !important;
+
+  font-weight: bold;
+  font-size: 0.9rem;
+
+  &:hover,
+  &:active {
+    background: $fw-lochmara !important;
+    color: $fw-white !important;
+    text-decoration: underline !important;
+  }
+}
+
+.secondary {
+  background: $fw-lochmara !important;
+  border-radius: 100px !important;
+  color: $fw-white !important;
+
+  :hover,
+  :active {
+    background: $fw-lochmara !important;
+    color: $fw-white !important;
+    text-decoration: underline !important;
+  }
+}
