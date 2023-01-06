@@ -1,4 +1,8 @@
+@import "../../flyweight-theme.scss";
+
 #wrapper {
+  background: $black-squeeze;
+  color: $fw-emperor;
   font-size: 15px;
   font-weight: 700;
 }

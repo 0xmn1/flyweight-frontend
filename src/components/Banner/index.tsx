@@ -17,7 +17,7 @@ const Banner = (props: Props) => {
   }
 
   return (
-    <div className="py-1 text-center text-dark bg-warning" id={styles.wrapper}>
+    <div className="py-1 text-center" id={styles.wrapper}>
       <div>Currently connected to a testnet (network id: {networkId}).</div>
       <div>This network only supports the UNI &amp; WETH erc-20&lsquo;s.</div>
       <Stack direction="horizontal" gap={2} className={styles.linkWrapper}>

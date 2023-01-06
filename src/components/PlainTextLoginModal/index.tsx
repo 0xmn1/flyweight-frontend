@@ -1,6 +1,6 @@
 import { connected, connectionStore } from '../../redux/connectionStore';
 
-import Button from 'react-bootstrap/Button';
+import Button from '../Button';
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Form from 'react-bootstrap/Form';
@@ -58,10 +58,10 @@ export default class PlainTextLoginModal extends React.Component<Props, State> {
           </DropdownButton>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={this.props.onHide}>
+          <Button className="primary" onClick={this.props.onHide}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={this.connected}>
+          <Button className="primary" onClick={this.connected}>
             Connect
           </Button>
         </Modal.Footer>

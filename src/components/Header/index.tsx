@@ -1,7 +1,8 @@
 import { connectionStore, disconnected } from '../../redux/connectionStore';
 
-import Button from 'react-bootstrap/Button';
+import Button from '../Button';
 import Container from 'react-bootstrap/Container';
+import Logo from '../Logo';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import React from 'react';
@@ -16,34 +17,33 @@ type Props = {
 };
 
 const Header = (props: Props) => (
-  <Navbar bg="light" expand="lg" className="mb-3" id={styles.wrapper}>
+  <Navbar variant="dark" expand="lg" id={styles.wrapper}>
     <Container>
       <Navbar.Brand>
-        <Stack direction="vertical" gap={0}>
+        <Stack direction="horizontal" gap={2}>
+          <Logo />
           <div><b>Fly</b>weight</div>
         </Stack>
       </Navbar.Brand>
       <Navbar.Toggle aria-controls="basic-navbar-nav" />
       <Navbar.Collapse>
         <Nav className="me-auto">
-          <Nav.Link>Home</Nav.Link>
-          <Nav.Link>Dashboard</Nav.Link>
-          <Nav.Link>FAQ</Nav.Link>
+          <Nav.Link href="https://flyweight.me/" target="_blank">Home</Nav.Link>
           <Nav.Link href="https://github.com/0xmn1?tab=repositories" target="_blank">Github</Nav.Link>
         </Nav>
       </Navbar.Collapse>
 
       {props.isConnected ? (
-        <Button variant="primary" type="button" onClick={() => connectionStore.dispatch(disconnected())}>
+        <Button className="primary" onClick={() => connectionStore.dispatch(disconnected())}>
           Disconnect
         </Button>
       ) : (
         <>
           <Stack direction="horizontal" gap={2}>
-            <Button variant="primary" type="button" onClick={props.toggleManualLoginModal}>
+            <Button className="primary" onClick={props.toggleManualLoginModal}>
               Connect using plain-text
             </Button>
-            <Button variant={props.isMetamaskProviderDetected === false ? 'secondary' : 'primary'} type="button" onClick={props.metamaskLogin} disabled={props.isMetamaskProviderDetected === false}>
+            <Button className={props.isMetamaskProviderDetected === false ? 'secondary' : 'primary'} onClick={props.metamaskLogin} disabled={props.isMetamaskProviderDetected === false}>
               Connect using Metamask
             </Button>
           </Stack>
