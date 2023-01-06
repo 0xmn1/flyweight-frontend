@@ -28,9 +28,7 @@ const Header = (props: Props) => (
       <Navbar.Toggle aria-controls="basic-navbar-nav" />
       <Navbar.Collapse>
         <Nav className="me-auto">
-          <Nav.Link>Home</Nav.Link>
-          <Nav.Link>Dashboard</Nav.Link>
-          <Nav.Link>FAQ</Nav.Link>
+          <Nav.Link href="https://flyweight.me/" target="_blank">Home</Nav.Link>
           <Nav.Link href="https://github.com/0xmn1?tab=repositories" target="_blank">Github</Nav.Link>
         </Nav>
       </Navbar.Collapse>
